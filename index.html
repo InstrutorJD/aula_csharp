@@ -174,6 +174,39 @@
 
   .progress-line{ font-size:11px; color:var(--ink-dim); margin-top:2px; }
 
+  .timer-display{
+    display:inline-block; margin-left:18px; font-size:12px; font-family:'VT323', monospace;
+    padding:6px 12px; border:1px solid var(--line); background:var(--panel2);
+    letter-spacing:1px;
+  }
+  .timer-display.warning{ border-color:var(--yellow); color:var(--yellow); }
+  .timer-display.danger{ border-color:var(--blood-bright); color:var(--blood-bright); animation:pulse-timer 600ms ease infinite; }
+  @keyframes pulse-timer{
+    0%, 100%{ opacity:1; }
+    50%{ opacity:0.5; }
+  }
+
+  .audio-controls{
+    display:flex; gap:6px; align-items:center; font-size:11px;
+  }
+  .audio-controls button{ padding:6px 12px; }
+
+  .editor-wrap{ position:relative; display:flex; }
+  .line-numbers{
+    background:#0a0d0a; color:var(--ink-dim); padding:12px 8px; font-family:'JetBrains Mono', monospace;
+    font-size:13px; line-height:1.55; text-align:right; border-right:1px solid var(--line);
+    user-select:none; flex:none; width:40px;
+  }
+  .line-numbers div{ height:1.55em; }
+
+  .editor-wrap textarea#editor{
+    width:100%; min-height:300px; resize:vertical;
+    background:#060806; color:var(--ink); border:1px solid var(--line);
+    font-family:'JetBrains Mono', monospace; font-size:13px; line-height:1.55;
+    padding:12px 14px; tab-size:4; margin:0;
+  }
+  textarea#editor:focus{ outline:1px solid var(--green-dim); }
+
   footer.note{
     margin-top:18px; font-size:10.5px; color:var(--ink-dim); line-height:1.6;
     border-top:1px solid var(--line); padding-top:10px;
@@ -195,6 +228,9 @@
       <div class="rank-bar"><div class="rank-bar-fill" id="rankBarFill"></div></div>
     </div>
     <div class="badges-shelf" id="badgesShelf"></div>
+    <div class="audio-controls">
+      <button id="btnAudioToggle" class="ghost" title="Ativar/desativar áudio">🔊 Áudio</button>
+    </div>
   </div>
 
   <div class="tabs" id="langTabs"></div>
@@ -212,7 +248,11 @@
 
       <div class="card">
         <h3 id="editorTitle">Editor</h3>
+        <div id="timerContainer" style="margin-bottom:8px;">
+          <span class="timer-display" id="timerDisplay">⏱ 5m 0s</span>
+        </div>
         <div class="editor-wrap">
+          <div class="line-numbers" id="lineNumbers"></div>
           <textarea id="editor" spellcheck="false"></textarea>
         </div>
         <div class="toolbar">
@@ -1980,6 +2020,7 @@ class Jogo
     mEnunciadoEl.innerHTML = lvl.enunciado;
     editorTitleEl.textContent = TRACKS[currentTrack].editorTitle;
     editorEl.value = codeByLevel[currentTrack][lvl.id] || lvl.starter;
+    updateLineNumbers();
     consoleEl.innerHTML = '<span class="empty">// clique em Executar pra ver a saída aqui</span>';
     resultBannerEl.className = 'result-banner';
     resultBannerEl.textContent = '';
@@ -1989,6 +2030,7 @@ class Jogo
     checklistEl.innerHTML = '';
     renderMissionList();
     saveProgress();
+    startTimer();
   }
 
   function escapeHtml(s){
@@ -2066,6 +2108,239 @@ class Jogo
     }
   }
 
+  let currentTimerId = null;
+  let timerStartTime = null;
+  let audioEnabled = true;
+  let audioContext = null;
+
+  // ========== SISTEMA DE SOM (MÁQUINA DE ESCREVER) ==========
+  function initAudioContext(){
+    if (!audioContext){
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return audioContext;
+  }
+
+  function playKeyboardSound(){
+    if (!audioEnabled) return;
+    try {
+      const ctx = initAudioContext();
+      // Som de máquina de escrever: dois cliques rápidos
+      const now = ctx.currentTime;
+      const clickDuration = 0.03;
+      
+      // Primeiro clique
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.frequency.value = 150 + Math.random() * 50; // Frequência mais baixa
+      osc1.type = 'square';
+      gain1.gain.setValueAtTime(0.15, now);
+      gain1.gain.exponentialRampToValueAtTime(0.01, now + clickDuration);
+      osc1.start(now);
+      osc1.stop(now + clickDuration);
+      
+      // Segundo clique (ligeiramente mais agudo)
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.frequency.value = 200 + Math.random() * 50;
+      osc2.type = 'square';
+      gain2.gain.setValueAtTime(0.12, now + 0.02);
+      gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.02 + clickDuration);
+      osc2.start(now + 0.02);
+      osc2.stop(now + 0.02 + clickDuration);
+    } catch(e){}
+  }
+
+  // ========== NUMERAÇÃO DE LINHAS ==========
+  function updateLineNumbers(){
+    const lines = editorEl.value.split('\n').length;
+    const lineNumbersDiv = document.getElementById('lineNumbers');
+    lineNumbersDiv.innerHTML = '';
+    for (let i = 1; i <= Math.max(lines, 1); i++){
+      const div = document.createElement('div');
+      div.textContent = i;
+      lineNumbersDiv.appendChild(div);
+    }
+  }
+
+  // ========== TIMER ==========
+  function formatTime(seconds){
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}m ${secs.toString().padStart(2, '0')}s`;
+  }
+
+  function startTimer(){
+    timerStartTime = Date.now();
+    const TIMER_DURATION = 5 * 60 * 1000; // 5 minutos
+
+    if (currentTimerId) clearInterval(currentTimerId);
+    const timerDisplay = document.getElementById('timerDisplay');
+
+    currentTimerId = setInterval(() => {
+      const elapsed = Date.now() - timerStartTime;
+      const remaining = Math.max(0, TIMER_DURATION - elapsed);
+      const secondsRemaining = Math.floor(remaining / 1000);
+
+      timerDisplay.textContent = `⏱ ${formatTime(secondsRemaining)}`;
+
+      if (secondsRemaining <= 60){
+        timerDisplay.classList.add('warning');
+      } else {
+        timerDisplay.classList.remove('warning');
+      }
+
+      if (remaining <= 0){
+        clearInterval(currentTimerId);
+        timerDisplay.classList.remove('warning');
+        timerDisplay.classList.add('danger');
+        timerDisplay.textContent = '⏱ TEMPO ESGOTADO!';
+      }
+    }, 500);
+  }
+
+  function isWithinTimeLimit(){
+    if (!timerStartTime) return false;
+    const TIMER_DURATION = 5 * 60 * 1000;
+    const elapsed = Date.now() - timerStartTime;
+    return elapsed <= TIMER_DURATION;
+  }
+
+  function getExtraXP(){
+    if (!timerStartTime) return 0;
+    const TIMER_DURATION = 5 * 60 * 1000;
+    const elapsed = Date.now() - timerStartTime;
+    if (elapsed <= TIMER_DURATION){
+      const secondsRemaining = Math.floor((TIMER_DURATION - elapsed) / 1000);
+      return Math.max(5, Math.floor(secondsRemaining / 30)); // 5-10 XP extra
+    }
+    return 0;
+  }
+
+  // ========== EVENTOS DO EDITOR ==========
+  editorEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab'){
+      e.preventDefault();
+      const start = editorEl.selectionStart, end = editorEl.selectionEnd;
+      editorEl.value = editorEl.value.slice(0, start) + '    ' + editorEl.value.slice(end);
+      editorEl.selectionStart = editorEl.selectionEnd = start + 4;
+      updateLineNumbers();
+      playKeyboardSound();
+    } else if (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Delete'){
+      playKeyboardSound();
+    }
+  });
+
+  editorEl.addEventListener('input', updateLineNumbers);
+  editorEl.addEventListener('scroll', () => {
+    document.getElementById('lineNumbers').style.transform = `translateY(-${editorEl.scrollTop}px)`;
+  });
+
+  // ========== CONTROLE DE ÁUDIO ==========
+  document.getElementById('btnAudioToggle').addEventListener('click', () => {
+    audioEnabled = !audioEnabled;
+    const btn = document.getElementById('btnAudioToggle');
+    if (audioEnabled){
+      btn.textContent = '🔊 Áudio';
+      btn.style.color = 'var(--green)';
+      btn.style.borderColor = 'var(--green-dim)';
+      initAudioContext();
+    } else {
+      btn.textContent = '🔇 Mudo';
+      btn.style.color = 'var(--ink-dim)';
+      btn.style.borderColor = 'var(--line)';
+    }
+  });
+
+  // ========== MODIFICAR runCode PARA SUPORTAR TIMER E XP EXTRA ==========
+  const originalRunCode = runCode;
+  runCode = function(){
+    const levels = TRACKS[currentTrack].levels;
+    const idx = currentIndex[currentTrack];
+    const lvl = levels[idx];
+    const code = editorEl.value;
+    codeByLevel[currentTrack][lvl.id] = code;
+    saveProgress();
+
+    let output = [];
+    let error = null;
+    try{
+      const res = TRACKS[currentTrack].run(code);
+      output = res.output;
+    } catch(e){
+      error = e.message;
+    }
+
+    if (error){
+      consoleEl.innerHTML = `<span class="errline">Erro: ${escapeHtml(error)}</span>`;
+    } else if (output.length === 0){
+      consoleEl.innerHTML = '<span class="empty">// o programa rodou mas não exibiu nada</span>';
+    } else {
+      consoleEl.textContent = output.join('\n');
+    }
+
+    checklistEl.innerHTML = '';
+    let allChecksPass = true;
+    lvl.checks.forEach(c => {
+      const pass = c.re.test(code);
+      if (!pass) allChecksPass = false;
+      const row = document.createElement('div');
+      row.className = 'check-item ' + (pass ? 'pass' : 'fail');
+      row.innerHTML = `<span class="mark">${pass ? '✓' : '○'}</span><span class="txt">${escapeHtml(c.desc)}</span>`;
+      checklistEl.appendChild(row);
+    });
+
+    const expectedJoined = lvl.expectedOutput.join('\n');
+    const gotJoined = output.join('\n');
+    const outputMatches = !error && gotJoined === expectedJoined;
+
+    resultBannerEl.classList.add('show');
+    resultBannerEl.style.whiteSpace = 'pre-wrap';
+    if (outputMatches && allChecksPass){
+      const wasAlreadyDone = !!completed[currentTrack][lvl.id];
+      resultBannerEl.className = 'result-banner show ok';
+      const isLast = idx === levels.length - 1;
+
+      if (!wasAlreadyDone){
+        let xpGained = lvl.xp;
+        let bonusMessage = '';
+        
+        // Adicionar XP extra se dentro do tempo
+        if (isWithinTimeLimit()){
+          const extraXp = getExtraXP();
+          if (extraXp > 0){
+            xpGained += extraXp;
+            bonusMessage = ` +${extraXp} BÔNUS (dentro do tempo!)`;
+          }
+        }
+
+        xpTotal += xpGained;
+        earnedBadges[currentTrack + ':' + lvl.id] = true;
+        completed[currentTrack][lvl.id] = true;
+        resultBannerEl.textContent = `✓ Missão concluída! +${lvl.xp}${bonusMessage} XP · Selo desbloqueado: ${lvl.badge.icon} ${lvl.badge.label}`
+          + (isLast ? ' — você terminou essa trilha! 🎉' : ' — próxima missão desbloqueada.');
+        saveProgress();
+        renderStatusBar();
+        renderBadges(currentTrack + ':' + lvl.id);
+      } else {
+        resultBannerEl.textContent = '✓ Saída bateu certinho com o esperado (missão já concluída antes).';
+      }
+
+      renderMissionList();
+      mProgressEl.textContent = `${TRACKS[currentTrack].label} · Missão ${idx+1} de ${levels.length} · vale ${lvl.xp} XP · concluída ✓`;
+    } else if (!error && !outputMatches){
+      resultBannerEl.className = 'result-banner show bad';
+      resultBannerEl.textContent = `Quase lá — a saída ainda não bate com o esperado:\nEsperado:\n${expectedJoined}\n\nObtido:\n${gotJoined || '(nada)'}`;
+    } else if (error){
+      resultBannerEl.className = 'result-banner show bad';
+      resultBannerEl.textContent = 'O código não rodou. Veja o erro no console acima.';
+    }
+  };
+
   document.getElementById('btnRun').addEventListener('click', runCode);
   document.getElementById('btnReset').addEventListener('click', () => {
     const lvl = TRACKS[currentTrack].levels[currentIndex[currentTrack]];
@@ -2077,15 +2352,6 @@ class Jogo
   });
   document.getElementById('btnHint').addEventListener('click', () => {
     hintBoxEl.classList.toggle('show');
-  });
-
-  editorEl.addEventListener('keydown', (e) => {
-    if (e.key === 'Tab'){
-      e.preventDefault();
-      const start = editorEl.selectionStart, end = editorEl.selectionEnd;
-      editorEl.value = editorEl.value.slice(0, start) + '    ' + editorEl.value.slice(end);
-      editorEl.selectionStart = editorEl.selectionEnd = start + 4;
-    }
   });
 
   (function init(){
