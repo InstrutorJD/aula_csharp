@@ -1199,13 +1199,21 @@ class Zumbi
     { re: /Console\.WriteLine/, desc: 'usar Console.WriteLine pra exibir os dados' },
   ],
   hint: 'Exemplo com outros dados: string arma = "Espada"; int forca = 15; Console.WriteLine("Arma: " + arma); Console.WriteLine("Força: " + forca);',
-  gabarito: `string categoria = "Rasteiro";
-int vida = 30;
-int velocidade = 2;
+  gabarito: `using System;
 
-Console.WriteLine("Categoria: " + categoria);
-Console.WriteLine("Vida: " + vida);
-Console.WriteLine("Velocidade: " + velocidade);`
+class Program
+{
+    static void Main()
+    {
+        string categoria = "Rasteiro";
+        int vida = 30;
+        int velocidade = 2;
+
+        Console.WriteLine("Categoria: " + categoria);
+        Console.WriteLine("Vida: " + vida);
+        Console.WriteLine("Velocidade: " + velocidade);
+    }
+}`
 },
 {
   id: 'm2',
@@ -1253,14 +1261,22 @@ class Ataque
     { re: /Console\.WriteLine/, desc: 'exibir o resultado com Console.WriteLine' },
   ],
   hint: 'Exemplo com outros dados: int forcaBase = 10; float mult = 1.5f; int resultado = (int)(forcaBase * mult); Console.WriteLine(resultado);',
-  gabarito: `int vidaJogador = 80;
-int danoBase = 12;
-float multiplicador = 2.0f;
+  gabarito: `using System;
 
-int danoFinal = (int)(danoBase * multiplicador);
-vidaJogador = vidaJogador - danoFinal;
+class Program
+{
+    static void Main()
+    {
+        int vidaJogador = 80;
+        int danoBase = 12;
+        float multiplicador = 2.0f;
 
-Console.WriteLine("Vida restante: " + vidaJogador);`
+        int danoFinal = (int)(danoBase * multiplicador);
+        vidaJogador = vidaJogador - danoFinal;
+
+        Console.WriteLine("Vida restante: " + vidaJogador);
+    }
+}`
 },
 {
   id: 'm3',
@@ -1326,13 +1342,33 @@ class Jogo
     { re: /posicaoZumbi\.X/, desc: 'acessar posicaoZumbi.X' },
   ],
   hint: 'Exemplo com outros dados: Vector2 posicaoInimigo = new Vector2(2, 7); Console.WriteLine("X: " + posicaoInimigo.X + ", Y: " + posicaoInimigo.Y);',
-  gabarito: `Vector2 posicaoJogador = new Vector2(5, 3);
-Vector2 posicaoZumbi = new Vector2(8, 3);
+  gabarito: `using System;
 
-Console.WriteLine("Jogador -> X: " + posicaoJogador.X
-    + ", Y: " + posicaoJogador.Y);
-Console.WriteLine("Zumbi -> X: " + posicaoZumbi.X
-    + ", Y: " + posicaoZumbi.Y);`
+struct Vector2
+{
+    public float X;
+    public float Y;
+
+    public Vector2(float x, float y)
+    {
+        X = x;
+        Y = y;
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Vector2 posicaoJogador = new Vector2(5, 3);
+        Vector2 posicaoZumbi = new Vector2(8, 3);
+
+        Console.WriteLine("Jogador -> X: " + posicaoJogador.X
+            + ", Y: " + posicaoJogador.Y);
+        Console.WriteLine("Zumbi -> X: " + posicaoZumbi.X
+            + ", Y: " + posicaoZumbi.Y);
+    }
+}`
 },
 {
   id: 'm4',
@@ -1386,15 +1422,33 @@ class Jogo
     { re: /else/, desc: 'ter um bloco else' },
   ],
   hint: 'Exemplo com outros dados: float dist = 4; if (dist <= 2) { Console.WriteLine("Perto!"); } else { Console.WriteLine("Longe."); }',
-  gabarito: `float distancia = posicaoZumbi.X - posicaoJogador.X;
+  gabarito: `using System;
 
-if (distancia <= 1)
+struct Vector2
 {
-    Console.WriteLine("O zumbi alcançou o jogador!");
+    public float X;
+    public float Y;
+    public Vector2(float x, float y) { X = x; Y = y; }
 }
-else
+
+class Program
 {
-    Console.WriteLine("O zumbi ainda está se aproximando.");
+    static void Main()
+    {
+        Vector2 posicaoJogador = new Vector2(10, 0);
+        Vector2 posicaoZumbi = new Vector2(10.5f, 0);
+
+        float distancia = posicaoZumbi.X - posicaoJogador.X;
+
+        if (distancia <= 1)
+        {
+            Console.WriteLine("O zumbi alcançou o jogador!");
+        }
+        else
+        {
+            Console.WriteLine("O zumbi ainda está se aproximando.");
+        }
+    }
 }`
 },
 {
@@ -1441,12 +1495,20 @@ class Jogo
     { re: /Console\.WriteLine/, desc: 'exibir a vida a cada turno' },
   ],
   hint: 'Exemplo com outros dados: for (int rodada = 1; rodada <= 3; rodada++) { Console.WriteLine("Rodada " + rodada); }',
-  gabarito: `int vidaJogador = 150;
+  gabarito: `using System;
 
-for (int turno = 1; turno <= 5; turno++)
+class Program
 {
-    vidaJogador = vidaJogador - 20;
-    Console.WriteLine("Turno " + turno + " - Vida: " + vidaJogador);
+    static void Main()
+    {
+        int vidaJogador = 150;
+
+        for (int turno = 1; turno <= 5; turno++)
+        {
+            vidaJogador = vidaJogador - 20;
+            Console.WriteLine("Turno " + turno + " - Vida: " + vidaJogador);
+        }
+    }
 }`
 },
 {
@@ -1504,22 +1566,27 @@ class Jogo
     { re: /SomarPontos\(\s*30\s*\)/, desc: 'chamar SomarPontos(30)' },
   ],
   hint: 'Exemplo com outros dados: static int total = 0; static void Somar(int valor) { if (valor > 0) { total = total + valor; } Console.WriteLine("Total: " + total); } // chamado assim: Somar(20); Somar(-5); Somar(10);',
-  gabarito: `static int pontuacao = 0;
+  gabarito: `using System;
 
-static void SomarPontos(int pontos)
+class Program
 {
-    if (pontos > 0)
+    static int pontuacao = 0;
+
+    static void SomarPontos(int pontos)
     {
-        pontuacao = pontuacao + pontos;
+        if (pontos > 0)
+        {
+            pontuacao = pontuacao + pontos;
+        }
+        Console.WriteLine("Pontuação: " + pontuacao);
     }
-    Console.WriteLine("Pontuação: " + pontuacao);
-}
 
-static void Main()
-{
-    SomarPontos(50);
-    SomarPontos(-10);
-    SomarPontos(30);
+    static void Main()
+    {
+        SomarPontos(50);
+        SomarPontos(-10);
+        SomarPontos(30);
+    }
 }`
 },
 {
@@ -1572,7 +1639,9 @@ class Jogo
     { re: /zumbi1\.ReceberDano\(\s*20\s*\)/, desc: 'chamar zumbi1.ReceberDano(20)' },
   ],
   hint: 'Exemplo com outros dados: class Inimigo { public int Vida = 50; public void ReceberDano(int dano) { Vida = Vida - dano; if (Vida < 0) Vida = 0; } } // uso: Inimigo inimigo1 = new Inimigo(); inimigo1.ReceberDano(15); Console.WriteLine(inimigo1.Vida);',
-  gabarito: `class Zumbi
+  gabarito: `using System;
+
+class Zumbi
 {
     public int Vida = 30;
     public int Velocidade = 2;
@@ -1675,7 +1744,26 @@ class Jogo
     { re: /if\s*\(\s*heroi\.Vida\s*>\s*0\s*\)/, desc: 'checar heroi.Vida > 0 no final' },
   ],
   hint: 'Exemplo com outros dados: for (int rodada = 1; rodada <= 2; rodada++) { personagem.ReceberDano(10); personagem.SomarPontos(5); Console.WriteLine("Rodada " + rodada + " - Vida: " + personagem.Vida); }',
-  gabarito: `class Zumbi
+  gabarito: `using System;
+
+class Jogador
+{
+    public int Vida = 100;
+    public int Pontuacao = 0;
+
+    public void ReceberDano(int dano)
+    {
+        Vida = Vida - dano;
+        if (Vida < 0) Vida = 0;
+    }
+
+    public void SomarPontos(int pontos)
+    {
+        if (pontos > 0) Pontuacao = Pontuacao + pontos;
+    }
+}
+
+class Zumbi
 {
     public int Vida = 30;
 }
