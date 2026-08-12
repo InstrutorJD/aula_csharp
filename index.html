@@ -1,0 +1,2015 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PixelForge Studios — Treino de C#</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=VT323&family=JetBrains+Mono:wght@400;500;600;800&display=swap');
+
+  :root{
+    --bg:#0a0d0a; --panel:#10140f; --panel2:#0d110c; --line:#223022;
+    --green:#7cff3f; --green-dim:#4a9a2a; --blood:#c1121f; --blood-bright:#ff3b30;
+    --yellow:#d4c86a; --ink:#d9e6d2; --ink-dim:#6f8368;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,0.22) 0px, rgba(0,0,0,0.22) 1px, transparent 1px, transparent 3px),
+      radial-gradient(ellipse at 50% -10%, #14201233, transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    font-family:'JetBrains Mono', monospace;
+    min-height:100vh;
+  }
+  .app{ max-width:1180px; margin:0 auto; padding:22px 20px 40px; }
+
+  header{
+    display:flex; justify-content:space-between; align-items:baseline;
+    border-bottom:1px solid var(--line); padding-bottom:10px; margin-bottom:18px; flex-wrap:wrap; gap:8px;
+  }
+  header h1{
+    font-family:'VT323', monospace; font-size:32px; letter-spacing:1px; color:var(--green); margin:0;
+    text-shadow:0 0 8px rgba(124,255,63,.35);
+  }
+  header .sub{ font-size:11px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:1px; }
+
+  .statusbar{
+    display:flex; align-items:center; justify-content:space-between; gap:18px;
+    border:1px solid var(--line); background:var(--panel); padding:12px 16px; margin-bottom:14px; flex-wrap:wrap;
+  }
+  .rank-block{ min-width:220px; flex:1; }
+  .rank-name{
+    font-family:'VT323', monospace; font-size:20px; letter-spacing:.5px; color:var(--yellow);
+  }
+  .xp-line{ font-size:11px; color:var(--ink-dim); margin:2px 0 6px; }
+  .xp-line #xpValue{ color:var(--green); font-weight:800; }
+  .rank-bar{ height:6px; background:#1a221a; border:1px solid var(--line); max-width:320px; overflow:hidden; }
+  .rank-bar-fill{ height:100%; background:linear-gradient(90deg, var(--green-dim), var(--yellow)); width:0%; transition:width .4s ease; }
+
+  .badges-shelf{ display:flex; gap:6px; flex-wrap:wrap; max-width:520px; }
+  .badge{
+    width:34px; height:34px; display:flex; align-items:center; justify-content:center;
+    font-size:17px; border:1px solid var(--line); background:#0a0d0a; border-radius:3px;
+    filter:grayscale(1); opacity:0.28; position:relative; cursor:default;
+  }
+  .badge.earned{ filter:none; opacity:1; border-color:var(--green-dim); box-shadow:0 0 8px rgba(124,255,63,0.25); }
+  .badge.pulse{ animation:badgePulse 900ms ease; }
+  @keyframes badgePulse{
+    0%{ transform:scale(1); box-shadow:0 0 0 rgba(124,255,63,0); }
+    35%{ transform:scale(1.35); box-shadow:0 0 16px rgba(124,255,63,0.6); }
+    100%{ transform:scale(1); box-shadow:0 0 8px rgba(124,255,63,0.25); }
+  }
+
+  .tabs{ display:flex; gap:6px; margin-bottom:16px; }  .tab-btn{
+    font-family:'JetBrains Mono', monospace; font-weight:800; font-size:12px; letter-spacing:1px; text-transform:uppercase;
+    background:transparent; color:var(--ink-dim); border:1px solid var(--line); padding:9px 20px; cursor:pointer; border-radius:2px;
+  }
+  .tab-btn:hover{ color:var(--ink); border-color:var(--ink-dim); }
+  .tab-btn.active{ background:var(--green); color:#04220a; border-color:var(--green); }
+
+  .layout{ display:grid; grid-template-columns:250px minmax(0,1fr); gap:16px; }
+  @media (max-width:880px){ .layout{grid-template-columns:1fr;} }
+
+  .missions{ display:flex; flex-direction:column; gap:6px; }
+  .mission-btn{
+    display:flex; align-items:center; gap:10px;
+    background:var(--panel); border:1px solid var(--line); color:var(--ink);
+    padding:10px 12px; text-align:left; cursor:pointer; font-family:inherit; font-size:12px;
+  }
+  .mission-btn:hover{ border-color:var(--green-dim); }
+  .mission-btn.active{ border-color:var(--green); color:var(--green); background:#0e1a0c; }
+  .mission-btn .dot{
+    width:9px; height:9px; flex:none; border:1px solid var(--ink-dim); border-radius:50%;
+  }
+  .mission-btn.done .dot{ background:var(--green); border-color:var(--green); }
+  .mission-btn.locked{ opacity:0.5; cursor:not-allowed; }
+  .mission-btn.locked:hover{ border-color:var(--line); }
+  .mission-btn .dot.lock{ width:auto; height:auto; border:none; font-size:10px; }
+  .mission-btn .num{ color:var(--ink-dim); font-size:11px; }
+
+  .main{ display:flex; flex-direction:column; gap:14px; min-width:0; }
+
+  .card{ background:var(--panel); border:1px solid var(--line); padding:16px; }
+  .card h2{
+    font-family:'VT323', monospace; font-size:24px; color:var(--green); margin:0 0 6px; letter-spacing:.5px;
+  }
+  .card h3{ margin:0 0 8px; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--ink-dim); font-weight:600;}
+  .enunciado{ font-size:12.5px; line-height:1.7; color:var(--ink); }
+  .enunciado ul{ margin:8px 0 0; padding-left:18px; }
+  .enunciado li{ margin-bottom:4px; }
+  .enunciado code{ color:var(--yellow); }
+
+  .concept-box{
+    border:1px solid #274a52; background:#0a1618; padding:12px 14px; margin-bottom:14px;
+  }
+  .concept-box h3{
+    margin:0 0 8px; font-size:12px; letter-spacing:1px; text-transform:none; color:#7fd8e8; font-weight:800;
+  }
+  .concept-body{ font-size:12.5px; line-height:1.7; color:var(--ink); }
+  .concept-body p{ margin:0 0 8px; }
+  .concept-body p:last-child{ margin-bottom:0; }
+  .concept-body ul{ margin:6px 0 8px; padding-left:18px; }
+  .concept-body li{ margin-bottom:4px; }
+  .concept-body code{ color:var(--yellow); }
+  .concept-body b{ color:#7fd8e8; }
+
+  .editor-wrap{ position:relative; }
+  textarea#editor{
+    width:100%; min-height:300px; resize:vertical;
+    background:#060806; color:var(--ink); border:1px solid var(--line);
+    font-family:'JetBrains Mono', monospace; font-size:13px; line-height:1.55;
+    padding:12px 14px; tab-size:4;
+  }
+  textarea#editor:focus{ outline:1px solid var(--green-dim); }
+
+  .toolbar{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+
+  button{
+    font-family:inherit; font-weight:800; font-size:11.5px; letter-spacing:1px; text-transform:uppercase;
+    background:var(--green); color:#04220a; border:none; padding:10px 18px; cursor:pointer; border-radius:2px;
+  }
+  button:hover{ background:#9dff6f; }
+  button.secondary{ background:transparent; color:var(--green); border:1px solid var(--green-dim); }
+  button.secondary:hover{ background:rgba(124,255,63,.08); }
+  button.ghost{ background:transparent; color:var(--ink-dim); border:1px solid var(--line); }
+  button.ghost:hover{ color:var(--ink); border-color:var(--ink-dim); }
+
+  .console{
+    background:#060806; border:1px solid var(--line); padding:10px 12px;
+    font-size:12px; line-height:1.6; min-height:90px; max-height:220px; overflow-y:auto;
+    white-space:pre-wrap; word-break:break-word;
+  }
+  .console .empty{ color:var(--ink-dim); }
+  .console .errline{ color:var(--blood-bright); }
+
+  .checklist{ display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+  .check-item{ display:flex; gap:8px; align-items:flex-start; font-size:12px; }
+  .check-item .mark{ flex:none; width:16px; }
+  .check-item.pass .mark{ color:var(--green); }
+  .check-item.pass span.txt{ color:var(--ink); }
+  .check-item.fail .mark{ color:var(--blood-bright); }
+  .check-item.fail span.txt{ color:var(--ink-dim); }
+
+  .result-banner{
+    padding:10px 12px; font-size:12.5px; border:1px solid var(--line); margin-top:10px; display:none;
+  }
+  .result-banner.show{ display:block; }
+  .result-banner.ok{ border-color:var(--green-dim); color:var(--green); background:rgba(124,255,63,0.06); }
+  .result-banner.bad{ border-color:var(--blood); color:var(--blood-bright); background:rgba(193,18,31,0.06); }
+
+  details{ margin-top:10px; }
+  summary{ cursor:pointer; font-size:11px; color:var(--ink-dim); letter-spacing:1px; text-transform:uppercase; }
+  .gabarito-box{
+    margin-top:8px; background:#060806; border:1px solid var(--line); padding:10px 12px;
+    font-size:12px; white-space:pre-wrap; color:var(--yellow);
+  }
+
+  .hint-box{
+    margin-top:8px; font-size:12px; color:var(--ink-dim); border-left:2px solid var(--green-dim); padding-left:10px;
+    display:none;
+  }
+  .hint-box.show{ display:block; }
+
+  .progress-line{ font-size:11px; color:var(--ink-dim); margin-top:2px; }
+
+  footer.note{
+    margin-top:18px; font-size:10.5px; color:var(--ink-dim); line-height:1.6;
+    border-top:1px solid var(--line); padding-top:10px;
+  }
+  footer.note b{ color:var(--green-dim); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>PIXELFORGE STUDIOS — TREINO DE CÓDIGO</h1>
+    <div class="sub">Sobrevivência Zumbi · escreva o código real, execute, valide</div>
+  </header>
+
+  <div class="statusbar">
+    <div class="rank-block">
+      <div class="rank-name" id="rankName">Estagiário</div>
+      <div class="xp-line"><span id="xpValue">0</span> XP <span id="xpToNext"></span></div>
+      <div class="rank-bar"><div class="rank-bar-fill" id="rankBarFill"></div></div>
+    </div>
+    <div class="badges-shelf" id="badgesShelf"></div>
+  </div>
+
+  <div class="tabs" id="langTabs"></div>
+
+  <div class="layout">
+    <nav class="missions" id="missionList"></nav>
+
+    <div class="main">
+      <div class="card">
+        <h2 id="mTitle">—</h2>
+        <div class="progress-line" id="mProgress"></div>
+        <div class="concept-box" id="mConcept" style="display:none;"></div>
+        <div class="enunciado" id="mEnunciado"></div>
+      </div>
+
+      <div class="card">
+        <h3 id="editorTitle">Editor</h3>
+        <div class="editor-wrap">
+          <textarea id="editor" spellcheck="false"></textarea>
+        </div>
+        <div class="toolbar">
+          <button id="btnRun">Executar ▶</button>
+          <button class="secondary" id="btnReset">Restaurar molde</button>
+          <button class="ghost" id="btnHint">Dica</button>
+        </div>
+        <div class="hint-box" id="hintBox"></div>
+      </div>
+
+      <div class="card">
+        <h3>Saída (console)</h3>
+        <div class="console" id="consoleOut"><span class="empty">// clique em Executar pra ver a saída aqui</span></div>
+
+        <div class="result-banner" id="resultBanner"></div>
+
+        <h3 style="margin-top:14px;">Checklist</h3>
+        <div class="checklist" id="checklist"></div>
+
+        <details>
+          <summary>Ver gabarito (só depois de tentar!)</summary>
+          <div class="gabarito-box" id="gabaritoBox"></div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <footer class="note">
+    A aba <b>JavaScript</b> roda JS de verdade no seu navegador. A aba <b>C#</b> roda um interpretador de um
+    subconjunto real de C#, testado contra os gabaritos da aula. Mesma lógica — tipos, <b>if/else</b>, <b>for</b>,
+    funções/métodos e objetos/classes — em dois idiomas, pra fixar o conceito antes da sintaxe.
+    Progresso, XP e selos ficam salvos <b>neste navegador</b> (localStorage) — trocar de navegador ou limpar
+    dados do site zera o progresso.
+  </footer>
+</div>
+
+<script>
+function runJS(code){
+  const output = [];
+  const fakeConsole = {
+    log: function(){
+      const args = Array.prototype.slice.call(arguments);
+      output.push(args.map(function(a){
+        if (typeof a === 'string') return a;
+        if (a === undefined) return 'undefined';
+        if (a === null) return 'null';
+        try { return JSON.stringify(a); } catch(e){ return String(a); }
+      }).join(' '));
+    }
+  };
+  try{
+    const fn = new Function('console', code);
+    fn(fakeConsole);
+  } catch(e){
+    throw new Error(e.message);
+  }
+  return { output: output };
+}
+
+</script>
+
+<script>
+// ================== Mini-interpretador de C# (subconjunto do curso) ==================
+// Suporta exatamente o que aparece no deck: using, class, struct, campos, construtores,
+// métodos static/instância, Main, tipos int/float/string/bool, structs, new, if/else,
+// for, operadores aritméticos/relacionais/lógicos, concatenação de string com +,
+// cast (int)(...), Console.WriteLine, ++/--.
+
+const KEYWORDS = new Set([
+  'using','class','struct','static','void','public','private',
+  'int','float','string','bool','if','else','for','new','true','false','return'
+]);
+
+function tokenize(src){
+  const tokens = [];
+  let i = 0, line = 1;
+  const n = src.length;
+  while (i < n){
+    const c = src[i];
+    if (c === '\n'){ line++; i++; continue; }
+    if (/\s/.test(c)){ i++; continue; }
+    if (c === '/' && src[i+1] === '/'){ while(i<n && src[i] !== '\n') i++; continue; }
+    if (c === '/' && src[i+1] === '*'){ i+=2; while(i<n && !(src[i]==='*'&&src[i+1]==='/')) { if(src[i]==='\n') line++; i++; } i+=2; continue; }
+    if (c === '"'){
+      let j = i+1, str = '';
+      while (j<n && src[j] !== '"'){
+        if (src[j] === '\\' && src[j+1] === 'n'){ str += '\n'; j+=2; continue; }
+        if (src[j] === '\\' && src[j+1] === '"'){ str += '"'; j+=2; continue; }
+        str += src[j]; j++;
+      }
+      tokens.push({type:'string', value:str, line});
+      i = j+1; continue;
+    }
+    if (/[0-9]/.test(c)){
+      let j = i, num = '';
+      while (j<n && /[0-9.]/.test(src[j])){ num += src[j]; j++; }
+      let isFloat = num.includes('.');
+      if (src[j] === 'f' || src[j] === 'F'){ isFloat = true; j++; }
+      tokens.push({type:'number', value: parseFloat(num), isFloat, line});
+      i = j; continue;
+    }
+    if (/[A-Za-z_]/.test(c)){
+      let j = i, id = '';
+      while (j<n && /[A-Za-z0-9_]/.test(src[j])){ id += src[j]; j++; }
+      tokens.push({type: KEYWORDS.has(id) ? 'kw' : 'ident', value:id, line});
+      i = j; continue;
+    }
+    const two = src.substr(i,2);
+    if (['==','!=','<=','>=','&&','||','++','--'].includes(two)){
+      tokens.push({type:'op', value:two, line}); i+=2; continue;
+    }
+    if ('{}();,.=+-*/%<>!'.includes(c)){
+      tokens.push({type:'op', value:c, line}); i++; continue;
+    }
+    throw new Error(`Caractere inesperado '${c}' na linha ${line}`);
+  }
+  tokens.push({type:'eof', value:null, line});
+  return tokens;
+}
+
+function parse(tokens){
+  let pos = 0;
+  const knownTypes = new Set(['int','float','string','bool']);
+  // pré-varredura pra achar nomes de class/struct
+  for (let k=0; k<tokens.length-1; k++){
+    if (tokens[k].type==='kw' && (tokens[k].value==='class' || tokens[k].value==='struct')){
+      knownTypes.add(tokens[k+1].value);
+    }
+  }
+
+  function peek(o=0){ return tokens[pos+o]; }
+  function cur(){ return tokens[pos]; }
+  function atEnd(){ return cur().type === 'eof'; }
+  function advance(){ return tokens[pos++]; }
+  function check(type,value){
+    const t = cur();
+    if (t.type !== type) return false;
+    if (value !== undefined && t.value !== value) return false;
+    return true;
+  }
+  function checkOp(v){ return check('op', v); }
+  function checkKw(v){ return check('kw', v); }
+  function expectOp(v){
+    if (!checkOp(v)) throw new Error(`Esperava '${v}' e encontrei '${cur().value}' (linha ${cur().line})`);
+    return advance();
+  }
+  function expectKw(v){
+    if (!checkKw(v)) throw new Error(`Esperava '${v}' e encontrei '${cur().value}' (linha ${cur().line})`);
+    return advance();
+  }
+  function expectIdent(){
+    if (cur().type !== 'ident') throw new Error(`Esperava um identificador e encontrei '${cur().value}' (linha ${cur().line})`);
+    return advance().value;
+  }
+
+  function isTypeStart(){
+    if (cur().type === 'kw' && ['int','float','string','bool','void'].includes(cur().value)) return true;
+    if (cur().type === 'ident' && knownTypes.has(cur().value)) return true;
+    return false;
+  }
+  function parseTypeRef(){
+    const t = advance();
+    return t.value;
+  }
+
+  function parseProgram(){
+    while (checkKw('using')){
+      while (!checkOp(';')) advance();
+      advance();
+    }
+    const decls = [];
+    while (!atEnd()){
+      decls.push(parseTypeDecl());
+    }
+    return { decls };
+  }
+
+  function parseTypeDecl(){
+    const kind = checkKw('class') ? 'class' : (checkKw('struct') ? 'struct' : null);
+    if (!kind) throw new Error(`Esperava 'class' ou 'struct' (linha ${cur().line})`);
+    advance();
+    const name = expectIdent();
+    expectOp('{');
+    const members = [];
+    while (!checkOp('}')){
+      members.push(parseMember(name));
+    }
+    expectOp('}');
+    return { kind, name, members };
+  }
+
+  function parseMember(ownerName){
+    let isStatic = false;
+    while (checkKw('public') || checkKw('private') || checkKw('static')){
+      if (checkKw('static')) isStatic = true;
+      advance();
+    }
+    // construtor: IDENT(ownerName) seguido de '('
+    if (cur().type === 'ident' && cur().value === ownerName && peek(1).value === '('){
+      advance();
+      const params = parseParams();
+      const body = parseBlock();
+      return { memberKind:'ctor', name: ownerName, params, body };
+    }
+    const type = parseTypeRef();
+    const name = expectIdent();
+    if (checkOp('(')){
+      const params = parseParams();
+      const body = parseBlock();
+      return { memberKind:'method', isStatic, returnType:type, name, params, body };
+    }
+    let init = null;
+    if (checkOp('=')){ advance(); init = parseExpr(); }
+    expectOp(';');
+    return { memberKind:'field', isStatic, type, name, init };
+  }
+
+  function parseParams(){
+    expectOp('(');
+    const params = [];
+    while (!checkOp(')')){
+      const type = parseTypeRef();
+      const name = expectIdent();
+      params.push({ type, name });
+      if (checkOp(',')) advance();
+    }
+    expectOp(')');
+    return params;
+  }
+
+  function parseBlock(){
+    expectOp('{');
+    const stmts = [];
+    while (!checkOp('}')) stmts.push(parseStatement());
+    expectOp('}');
+    return stmts;
+  }
+
+  function parseStatementOrBlock(){
+    if (checkOp('{')) return parseBlock();
+    return [parseStatement()];
+  }
+
+  function parseStatement(){
+    if (checkKw('if')) return parseIf();
+    if (checkKw('for')) return parseFor();
+    if (checkOp('{')) return { type:'block', body: parseBlock() };
+    if (checkKw('return')){ advance(); expectOp(';'); return { type:'return' }; }
+
+    if (isTypeStart() && peek(1) && peek(1).type === 'ident'){
+      const type = parseTypeRef();
+      const name = expectIdent();
+      let init = null;
+      if (checkOp('=')){ advance(); init = parseExpr(); }
+      expectOp(';');
+      return { type:'decl', varType:type, name, init };
+    }
+    const expr = parseExpr();
+    expectOp(';');
+    return { type:'exprstmt', expr };
+  }
+
+  function parseIf(){
+    expectKw('if');
+    expectOp('(');
+    const cond = parseExpr();
+    expectOp(')');
+    const thenBody = parseStatementOrBlock();
+    let elseBody = null;
+    if (checkKw('else')){ advance(); elseBody = parseStatementOrBlock(); }
+    return { type:'if', cond, thenBody, elseBody };
+  }
+
+  function parseForInitOrUpdate(){
+    if (isTypeStart() && peek(1) && peek(1).type === 'ident'){
+      const varType = parseTypeRef();
+      const name = expectIdent();
+      let init = null;
+      if (checkOp('=')){ advance(); init = parseExpr(); }
+      return { type:'decl', varType, name, init };
+    }
+    return { type:'exprstmt', expr: parseExpr() };
+  }
+
+  function parseFor(){
+    expectKw('for');
+    expectOp('(');
+    const init = checkOp(';') ? null : parseForInitOrUpdate();
+    expectOp(';');
+    const cond = checkOp(';') ? null : parseExpr();
+    expectOp(';');
+    const update = checkOp(')') ? null : parseForInitOrUpdate();
+    expectOp(')');
+    const body = parseStatementOrBlock();
+    return { type:'for', init, cond, update, body };
+  }
+
+  // ---- expressões ----
+  function parseExpr(){ return parseAssignment(); }
+
+  function parseAssignment(){
+    const left = parseLogicalOr();
+    if (checkOp('=')){
+      advance();
+      const value = parseAssignment();
+      return { type:'assign', target:left, value };
+    }
+    return left;
+  }
+  function parseLogicalOr(){
+    let left = parseLogicalAnd();
+    while (checkOp('||')){ advance(); left = { type:'logic', op:'||', left, right: parseLogicalAnd() }; }
+    return left;
+  }
+  function parseLogicalAnd(){
+    let left = parseEquality();
+    while (checkOp('&&')){ advance(); left = { type:'logic', op:'&&', left, right: parseEquality() }; }
+    return left;
+  }
+  function parseEquality(){
+    let left = parseRelational();
+    while (checkOp('==') || checkOp('!=')){
+      const op = advance().value;
+      left = { type:'bin', op, left, right: parseRelational() };
+    }
+    return left;
+  }
+  function parseRelational(){
+    let left = parseAdditive();
+    while (checkOp('<') || checkOp('<=') || checkOp('>') || checkOp('>=')){
+      const op = advance().value;
+      left = { type:'bin', op, left, right: parseAdditive() };
+    }
+    return left;
+  }
+  function parseAdditive(){
+    let left = parseMultiplicative();
+    while (checkOp('+') || checkOp('-')){
+      const op = advance().value;
+      left = { type:'bin', op, left, right: parseMultiplicative() };
+    }
+    return left;
+  }
+  function parseMultiplicative(){
+    let left = parseUnary();
+    while (checkOp('*') || checkOp('/') || checkOp('%')){
+      const op = advance().value;
+      left = { type:'bin', op, left, right: parseUnary() };
+    }
+    return left;
+  }
+  function parseUnary(){
+    if (checkOp('-') || checkOp('!')){
+      const op = advance().value;
+      return { type:'unary', op, expr: parseUnary() };
+    }
+    return parsePostfix();
+  }
+  function parsePostfix(){
+    let node = parsePrimary();
+    for(;;){
+      if (checkOp('.')){
+        advance();
+        const name = expectIdent();
+        node = { type:'member', obj:node, name };
+      } else if (checkOp('(')){
+        const args = parseArgs();
+        node = { type:'call', callee:node, args };
+      } else if (checkOp('++') || checkOp('--')){
+        const op = advance().value;
+        node = { type:'postfix', op, target:node };
+      } else break;
+    }
+    return node;
+  }
+  function parseArgs(){
+    expectOp('(');
+    const args = [];
+    while (!checkOp(')')){
+      args.push(parseExpr());
+      if (checkOp(',')) advance();
+    }
+    expectOp(')');
+    return args;
+  }
+  function parsePrimary(){
+    const t = cur();
+    if (t.type === 'number'){ advance(); return { type:'lit', kind: t.isFloat ? 'float':'int', value: t.value }; }
+    if (t.type === 'string'){ advance(); return { type:'lit', kind:'string', value: t.value }; }
+    if (checkKw('true')){ advance(); return { type:'lit', kind:'bool', value:true }; }
+    if (checkKw('false')){ advance(); return { type:'lit', kind:'bool', value:false }; }
+    if (checkKw('new')){
+      advance();
+      const typeName = expectIdent();
+      const args = parseArgs();
+      return { type:'new', typeName, args };
+    }
+    if (checkOp('(')){
+      // pode ser cast: ( TYPE )
+      if (peek(1) && ((peek(1).type==='kw' && ['int','float','string','bool'].includes(peek(1).value)) || (peek(1).type==='ident' && knownTypes.has(peek(1).value))) && peek(2) && peek(2).value === ')'){
+        advance();
+        const castType = parseTypeRef();
+        expectOp(')');
+        const expr = parseUnary();
+        return { type:'cast', castType, expr };
+      }
+      advance();
+      const e = parseExpr();
+      expectOp(')');
+      return e;
+    }
+    if (t.type === 'ident'){ advance(); return { type:'ident', name: t.value }; }
+    throw new Error(`Expressão inesperada perto de '${t.value}' (linha ${t.line})`);
+  }
+
+  const program = parseProgram();
+  return program;
+}
+
+// ================== Interpretador ==================
+
+class RuntimeError extends Error {}
+class ReturnSignal { }
+
+function fmt(v){
+  if (v === null || v === undefined) return 'null';
+  if (typeof v === 'boolean') return v ? 'True' : 'False';
+  if (typeof v === 'number') return Number.isInteger(v) ? String(v) : String(v);
+  if (typeof v === 'string') return v;
+  if (typeof v === 'object' && v.__type) return `[${v.__type}]`;
+  return String(v);
+}
+
+function createEnv(parent, opts){
+  return { vars: new Map(), parent: parent||null, instance: opts && opts.instance, staticClass: opts && opts.staticClass };
+}
+
+function envGet(env, name){
+  let e = env;
+  while (e){
+    if (e.vars.has(name)) return e.vars.get(name);
+    if (e.instance && Object.prototype.hasOwnProperty.call(e.instance.fields, name)) return e.instance.fields[name];
+    if (e.staticClass) {
+      const cls = INTERP.classes[e.staticClass] || INTERP.structs[e.staticClass];
+      if (cls && Object.prototype.hasOwnProperty.call(cls.staticValues, name)) return cls.staticValues[name];
+    }
+    e = e.parent;
+  }
+  throw new RuntimeError(`Variável '${name}' não foi declarada.`);
+}
+function envSet(env, name, value){
+  let e = env;
+  while (e){
+    if (e.vars.has(name)){ e.vars.set(name, value); return; }
+    if (e.instance && Object.prototype.hasOwnProperty.call(e.instance.fields, name)){ e.instance.fields[name] = value; return; }
+    if (e.staticClass){
+      const cls = INTERP.classes[e.staticClass] || INTERP.structs[e.staticClass];
+      if (cls && Object.prototype.hasOwnProperty.call(cls.staticValues, name)){ cls.staticValues[name] = value; return; }
+    }
+    e = e.parent;
+  }
+  throw new RuntimeError(`Variável '${name}' não foi declarada.`);
+}
+function envDeclare(env, name, value){ env.vars.set(name, value); }
+
+let INTERP = null;
+
+function runProgram(ast, opts){
+  opts = opts || {};
+  const classes = {};
+  const structs = {};
+  for (const decl of ast.decls){
+    const info = { name: decl.name, fields: [], methods: {}, ctor: null, staticValues: {} };
+    for (const m of decl.members){
+      if (m.memberKind === 'field') info.fields.push(m);
+      else if (m.memberKind === 'method') info.methods[m.name] = m;
+      else if (m.memberKind === 'ctor') info.ctor = m;
+    }
+    if (decl.kind === 'class') classes[decl.name] = info; else structs[decl.name] = info;
+  }
+  INTERP = { classes, structs, output: [] };
+
+  function defaultForType(type){
+    if (type === 'int' || type === 'float') return 0;
+    if (type === 'bool') return false;
+    if (type === 'string') return '';
+    return null;
+  }
+
+  // inicializa campos static
+  for (const name of Object.keys(classes)){
+    const cls = classes[name];
+    const baseEnv = createEnv(null, { staticClass: name });
+    for (const f of cls.fields){
+      if (f.isStatic){
+        cls.staticValues[f.name] = f.init ? evalExpr(f.init, baseEnv) : defaultForType(f.type);
+      }
+    }
+  }
+
+  function instantiate(typeName, args, callerEnv){
+    const cls = classes[typeName] || structs[typeName];
+    if (!cls) throw new RuntimeError(`Tipo desconhecido: ${typeName}`);
+    const obj = { __type: typeName, fields: {} };
+    for (const f of cls.fields){
+      if (!f.isStatic){
+        obj.fields[f.name] = f.init ? evalExpr(f.init, createEnv(null,{instance:obj})) : defaultForType(f.type);
+      }
+    }
+    if (cls.ctor){
+      const argVals = args.map(a => evalExpr(a, callerEnv));
+      const methodEnv = createEnv(null, { instance: obj });
+      cls.ctor.params.forEach((p, idx) => envDeclare(methodEnv, p.name, argVals[idx]));
+      try { execStatements(cls.ctor.body, methodEnv); } catch(e){ if(!(e instanceof ReturnSignal)) throw e; }
+    }
+    return obj;
+  }
+
+  function findStaticMethodAnyClass(name){
+    for (const cname of Object.keys(classes)){
+      if (classes[cname].methods[name] && classes[cname].methods[name].isStatic) return { cls: classes[cname], className: cname };
+    }
+    return null;
+  }
+
+  function callMethodOnObject(obj, methodName, args, callerEnv){
+    const cls = classes[obj.__type] || structs[obj.__type];
+    if (!cls) throw new RuntimeError(`Tipo desconhecido: ${obj.__type}`);
+    const method = cls.methods[methodName];
+    if (!method) throw new RuntimeError(`Método '${methodName}' não existe em '${obj.__type}'`);
+    const argVals = args.map(a => evalExpr(a, callerEnv));
+    const methodEnv = createEnv(null, { instance: obj });
+    method.params.forEach((p, idx) => envDeclare(methodEnv, p.name, argVals[idx]));
+    try { execStatements(method.body, methodEnv); } catch(e){ if(!(e instanceof ReturnSignal)) throw e; }
+    return undefined;
+  }
+
+  function callStaticMethod(className, methodName, args, callerEnv){
+    const cls = classes[className];
+    const method = cls.methods[methodName];
+    const argVals = args.map(a => evalExpr(a, callerEnv));
+    const methodEnv = createEnv(null, { staticClass: className });
+    method.params.forEach((p, idx) => envDeclare(methodEnv, p.name, argVals[idx]));
+    try { execStatements(method.body, methodEnv); } catch(e){ if(!(e instanceof ReturnSignal)) throw e; }
+    return undefined;
+  }
+
+  function evalExpr(node, env){
+    switch(node.type){
+      case 'lit': return node.value;
+      case 'ident': return envGet(env, node.name);
+      case 'unary': {
+        const v = evalExpr(node.expr, env);
+        if (node.op === '-') return -v;
+        if (node.op === '!') return !v;
+        break;
+      }
+      case 'bin': {
+        const l = evalExpr(node.left, env);
+        const r = evalExpr(node.right, env);
+        switch(node.op){
+          case '+':
+            if (typeof l === 'string' || typeof r === 'string') return fmt(l) + fmt(r);
+            return l + r;
+          case '-': return l - r;
+          case '*': return l * r;
+          case '/': return (Number.isInteger(l) && Number.isInteger(r)) ? Math.trunc(l / r) : l / r;
+          case '%': return l % r;
+          case '==': return l === r;
+          case '!=': return l !== r;
+          case '<': return l < r;
+          case '<=': return l <= r;
+          case '>': return l > r;
+          case '>=': return l >= r;
+        }
+        break;
+      }
+      case 'logic': {
+        const l = evalExpr(node.left, env);
+        if (node.op === '&&') return l && evalExpr(node.right, env);
+        return l || evalExpr(node.right, env);
+      }
+      case 'cast': {
+        const v = evalExpr(node.expr, env);
+        if (node.castType === 'int') return Math.trunc(v);
+        if (node.castType === 'float') return v;
+        if (node.castType === 'string') return fmt(v);
+        return v;
+      }
+      case 'member': {
+        const obj = evalExpr(node.obj, env);
+        if (obj && typeof obj === 'object' && obj.fields && Object.prototype.hasOwnProperty.call(obj.fields, node.name)){
+          return obj.fields[node.name];
+        }
+        throw new RuntimeError(`Campo '${node.name}' não encontrado.`);
+      }
+      case 'new': return instantiate(node.typeName, node.args, env);
+      case 'assign': {
+        const value = evalExpr(node.value, env);
+        assignTo(node.target, value, env);
+        return value;
+      }
+      case 'postfix': {
+        const old = evalExpr(node.target, env);
+        const nv = node.op === '++' ? old + 1 : old - 1;
+        assignTo(node.target, nv, env);
+        return old;
+      }
+      case 'call': return evalCall(node, env);
+    }
+    throw new RuntimeError('Nó de expressão não suportado: ' + node.type);
+  }
+
+  function assignTo(target, value, env){
+    if (target.type === 'ident'){ envSet(env, target.name, value); return; }
+    if (target.type === 'member'){
+      const obj = evalExpr(target.obj, env);
+      if (!obj || !obj.fields) throw new RuntimeError('Alvo de atribuição inválido.');
+      obj.fields[target.name] = value;
+      return;
+    }
+    throw new RuntimeError('Alvo de atribuição inválido.');
+  }
+
+  function evalCall(node, env){
+    const callee = node.callee;
+    // Console.WriteLine
+    if (callee.type === 'member' && callee.obj.type === 'ident' && callee.obj.name === 'Console' && callee.name === 'WriteLine'){
+      const v = node.args.length ? evalExpr(node.args[0], env) : '';
+      INTERP.output.push(fmt(v));
+      return undefined;
+    }
+    if (callee.type === 'member'){
+      const obj = evalExpr(callee.obj, env);
+      if (!obj || !obj.__type) throw new RuntimeError(`Não é possível chamar método em '${callee.name}'.`);
+      return callMethodOnObject(obj, callee.name, node.args, env);
+    }
+    if (callee.type === 'ident'){
+      // static do contexto atual primeiro
+      let ctxClass = null;
+      let e = env;
+      while (e){ if (e.staticClass){ ctxClass = e.staticClass; break; } if (e.instance){ ctxClass = e.instance.__type; break; } e = e.parent; }
+      if (ctxClass && classes[ctxClass] && classes[ctxClass].methods[callee.name]){
+        return callStaticMethod(ctxClass, callee.name, node.args, env);
+      }
+      const found = findStaticMethodAnyClass(callee.name);
+      if (found) return callStaticMethod(found.className, callee.name, node.args, env);
+      throw new RuntimeError(`Método '${callee.name}' não encontrado.`);
+    }
+    throw new RuntimeError('Chamada inválida.');
+  }
+
+  function execStatements(stmts, env){
+    for (const s of stmts) execStatement(s, env);
+  }
+  function execStatement(s, env){
+    switch(s.type){
+      case 'decl': {
+        const v = s.init ? evalExpr(s.init, env) : defaultForType(s.varType);
+        envDeclare(env, s.name, v);
+        return;
+      }
+      case 'exprstmt': evalExpr(s.expr, env); return;
+      case 'if': {
+        const c = evalExpr(s.cond, env);
+        if (c) execStatements(s.thenBody, createEnv(env));
+        else if (s.elseBody) execStatements(s.elseBody, createEnv(env));
+        return;
+      }
+      case 'for': {
+        const loopEnv = createEnv(env);
+        if (s.init) execStatement(s.init, loopEnv);
+        let guard = 0;
+        while (s.cond ? evalExpr(s.cond, loopEnv) : true){
+          if (++guard > 5000) throw new RuntimeError('Loop excedeu o limite de iterações (possível loop infinito).');
+          execStatements(s.body, createEnv(loopEnv));
+          if (s.update) execStatement(s.update, loopEnv);
+        }
+        return;
+      }
+      case 'block': execStatements(s.body, createEnv(env)); return;
+      case 'return': throw new ReturnSignal();
+    }
+    throw new RuntimeError('Statement não suportado: ' + s.type);
+  }
+
+  // acha Main
+  let mainClass = null;
+  for (const name of Object.keys(classes)){
+    if (classes[name].methods['Main']) { mainClass = name; break; }
+  }
+  if (!mainClass) throw new RuntimeError('Nenhum método Main() encontrado.');
+
+  const mainEnv = createEnv(null, { staticClass: mainClass });
+  try {
+    execStatements(classes[mainClass].methods['Main'].body, mainEnv);
+  } catch(e){
+    if (!(e instanceof ReturnSignal)) throw e;
+  }
+
+  return { output: INTERP.output, classes, structs };
+}
+
+function runCSharp(src){
+  const tokens = tokenize(src);
+  const ast = parse(tokens);
+  return runProgram(ast);
+}
+
+
+</script>
+
+<script>
+const LEVELS_JS = [
+{
+  id: 'j1',
+  title: 'Nível 1 — Sua Primeira Variável',
+  xp: 50,
+  badge: { icon: '🔤', label: 'Variáveis' },
+  enunciado: `
+    <p>Em JavaScript você guarda um valor numa variável com <code>let</code>. Diferente do C#, não
+    precisa dizer o tipo antes — o JS descobre sozinho.</p>
+    <p>Declare uma variável chamada <code>vida</code> com o valor <code>100</code> e exiba ela no console.</p>
+    <p>Saída esperada: <code>100</code></p>
+  `,
+  starter: `// 1. declare let vida = 100
+
+// 2. exiba vida com console.log
+`,
+  expectedOutput: ['100'],
+  checks: [
+    { re: /let\s+vida\s*=\s*100/, desc: 'declarar let vida = 100' },
+    { re: /console\.log\(\s*vida\s*\)/, desc: 'exibir a variável com console.log(vida)' },
+  ],
+  hint: 'Exemplo com outros dados: let pontuacao = 50; console.log(pontuacao);',
+  gabarito: `let vida = 100;
+console.log(vida);`
+},
+{
+  id: 'j2',
+  title: 'Nível 2 — Somando Dois Números',
+  xp: 60,
+  badge: { icon: '➕', label: 'Soma' },
+  enunciado: `
+    <p>Um zumbi causa dano em duas mordidas: 10 e 15. Declare duas variáveis, some os valores numa
+    terceira e exiba o resultado.</p>
+    <p>Saída esperada: <code>25</code></p>
+  `,
+  starter: `// 1. declare mordidaUm = 10 e mordidaDois = 15
+
+// 2. some as duas numa variável danoTotal
+
+// 3. exiba danoTotal
+`,
+  expectedOutput: ['25'],
+  checks: [
+    { re: /let\s+mordidaUm\s*=\s*10/, desc: 'declarar mordidaUm = 10' },
+    { re: /let\s+mordidaDois\s*=\s*15/, desc: 'declarar mordidaDois = 15' },
+    { re: /danoTotal\s*=\s*mordidaUm\s*\+\s*mordidaDois/, desc: 'somar as duas variáveis' },
+    { re: /console\.log/, desc: 'exibir o resultado' },
+  ],
+  hint: 'Exemplo com outros dados: let a = 3; let b = 4; let soma = a + b; console.log(soma);',
+  gabarito: `let mordidaUm = 10;
+let mordidaDois = 15;
+let danoTotal = mordidaUm + mordidaDois;
+console.log(danoTotal);`
+},
+{
+  id: 'j3',
+  title: 'Nível 3 — Texto + Número',
+  xp: 60,
+  badge: { icon: '🔗', label: 'Concatenação' },
+  enunciado: `
+    <p>Você pode juntar texto com número usando <code>+</code> — o número vira texto automaticamente.
+    Isso é igual ao que vocês já fazem no C#.</p>
+    <p>Declare <code>nome</code> = "Rasteiro" e <code>vida</code> = 30. Exiba:</p>
+    <p><code>Rasteiro tem 30 de vida</code></p>
+  `,
+  starter: `// 1. declare nome = "Rasteiro" e vida = 30
+
+// 2. exiba: Rasteiro tem 30 de vida
+`,
+  expectedOutput: ['Rasteiro tem 30 de vida'],
+  checks: [
+    { re: /let\s+nome\s*=\s*"Rasteiro"/, desc: 'declarar nome = "Rasteiro"' },
+    { re: /let\s+vida\s*=\s*30/, desc: 'declarar vida = 30' },
+    { re: /console\.log\(\s*nome\s*\+/, desc: 'concatenar nome + texto + vida com +' },
+  ],
+  hint: 'Exemplo com outros dados: let item = \"Poção\"; let quantidade = 5; console.log(item + \" x\" + quantidade);',
+  gabarito: `let nome = "Rasteiro";
+let vida = 30;
+console.log(nome + " tem " + vida + " de vida");`
+},
+{
+  id: 'j4',
+  title: 'Nível 4 — O Zumbi Ainda Está Vivo?',
+  xp: 70,
+  badge: { icon: '🔀', label: 'Condicional' },
+  enunciado: `
+    <p><code>if/else</code> em JS é idêntico ao de C#. Declare <code>vida = 0</code> e escreva uma
+    condicional:</p>
+    <ul>
+      <li>se <code>vida &gt; 0</code>: exiba "O zumbi está vivo."</li>
+      <li>senão: exiba "O zumbi foi derrotado."</li>
+    </ul>
+  `,
+  starter: `let vida = 0;
+
+// escreva o if/else usando vida > 0
+`,
+  expectedOutput: ['O zumbi foi derrotado.'],
+  checks: [
+    { re: /if\s*\(\s*vida\s*>\s*0\s*\)/, desc: 'usar if (vida > 0)' },
+    { re: /else/, desc: 'ter um bloco else' },
+  ],
+  hint: 'Exemplo com outros dados: if (pontos > 10) { console.log("Passou!"); } else { console.log("Não passou."); }',
+  gabarito: `let vida = 0;
+
+if (vida > 0) {
+    console.log("O zumbi está vivo.");
+} else {
+    console.log("O zumbi foi derrotado.");
+}`
+},
+{
+  id: 'j5',
+  title: 'Nível 5 — Contando os Turnos',
+  xp: 80,
+  badge: { icon: '🔁', label: 'Loop' },
+  enunciado: `
+    <p>Um <code>for</code> repete um bloco de código várias vezes. Escreva um <code>for</code> que
+    conte de 1 até 5, exibindo:</p>
+    <p><code>Turno 1</code></p>
+    <p>...até <code>Turno 5</code>.</p>
+  `,
+  starter: `// escreva um for de turno = 1 até turno <= 5
+// exibindo "Turno X" a cada volta
+`,
+  expectedOutput: ['Turno 1','Turno 2','Turno 3','Turno 4','Turno 5'],
+  checks: [
+    { re: /for\s*\(\s*let\s+turno\s*=\s*1\s*;\s*turno\s*<=\s*5\s*;\s*turno\+\+\s*\)/, desc: 'for (let turno = 1; turno <= 5; turno++)' },
+    { re: /console\.log/, desc: 'exibir o turno a cada volta' },
+  ],
+  hint: 'Exemplo com outros dados: for (let i = 1; i <= 3; i++) { console.log("Rodada " + i); }',
+  gabarito: `for (let turno = 1; turno <= 5; turno++) {
+    console.log("Turno " + turno);
+}`
+},
+{
+  id: 'j6',
+  title: 'Nível 6 — Sua Primeira Função',
+  xp: 90,
+  badge: { icon: '⚙️', label: 'Função' },
+  enunciado: `
+    <p>Uma <code>function</code> é um bloco de código reutilizável, que você pode chamar quantas vezes
+    quiser passando valores diferentes.</p>
+    <p>Crie a função <code>avisarZumbi(nome)</code> que exibe:</p>
+    <p><code>Um zumbi apareceu: Rasteiro</code></p>
+    <p>Chame ela passando <code>"Rasteiro"</code>.</p>
+  `,
+  starter: `// 1. crie function avisarZumbi(nome) que exiba "Um zumbi apareceu: " + nome
+
+
+// 2. chame avisarZumbi("Rasteiro")
+`,
+  expectedOutput: ['Um zumbi apareceu: Rasteiro'],
+  checks: [
+    { re: /function\s+avisarZumbi\s*\(\s*nome\s*\)/, desc: 'declarar function avisarZumbi(nome)' },
+    { re: /console\.log/, desc: 'exibir a mensagem dentro da função' },
+    { re: /avisarZumbi\(\s*"Rasteiro"\s*\)/, desc: 'chamar avisarZumbi("Rasteiro")' },
+  ],
+  hint: 'Exemplo com outros dados: function saudar(pessoa) { console.log("Olá, " + pessoa); } saudar("Maria");',
+  gabarito: `function avisarZumbi(nome) {
+    console.log("Um zumbi apareceu: " + nome);
+}
+
+avisarZumbi("Rasteiro");`
+},
+{
+  id: 'j7',
+  title: 'Nível 7 — Juntando Tudo',
+  xp: 100,
+  badge: { icon: '🧩', label: 'Integração' },
+  enunciado: `
+    <p>Combine variável, loop e condicional: o jogador começa com <code>vida = 40</code> e perde 15
+    por turno, durante 3 turnos.</p>
+    <p>A cada turno, exiba a vida. Se a vida ficar <code>&lt;= 0</code> a qualquer momento, exiba
+    também "Jogador derrotado!" (nesse turno).</p>
+    <p>Saída esperada:</p>
+    <ul>
+      <li><code>Turno 1 - Vida: 25</code></li>
+      <li><code>Turno 2 - Vida: 10</code></li>
+      <li><code>Turno 3 - Vida: -5</code></li>
+      <li><code>Jogador derrotado!</code></li>
+    </ul>
+  `,
+  starter: `let vida = 40;
+
+// for de turno = 1 até turno <= 3:
+//   vida = vida - 15
+//   exiba "Turno X - Vida: Y"
+//   se vida <= 0, exiba também "Jogador derrotado!"
+`,
+  expectedOutput: ['Turno 1 - Vida: 25','Turno 2 - Vida: 10','Turno 3 - Vida: -5','Jogador derrotado!'],
+  checks: [
+    { re: /for\s*\(\s*let\s+turno\s*=\s*1\s*;\s*turno\s*<=\s*3\s*;\s*turno\+\+\s*\)/, desc: 'for (let turno = 1; turno <= 3; turno++)' },
+    { re: /vida\s*=\s*vida\s*-\s*15/, desc: 'reduzir vida em 15 por turno' },
+    { re: /if\s*\(\s*vida\s*<=\s*0\s*\)/, desc: 'checar if (vida <= 0) dentro do loop' },
+  ],
+  hint: 'Exemplo com outros dados: let energia = 20; for (let r = 1; r <= 2; r++) { energia = energia - 12; console.log("Rodada " + r + " - Energia: " + energia); if (energia <= 0) { console.log("Sem energia!"); } }',
+  gabarito: `let vida = 40;
+
+for (let turno = 1; turno <= 3; turno++) {
+    vida = vida - 15;
+    console.log("Turno " + turno + " - Vida: " + vida);
+    if (vida <= 0) {
+        console.log("Jogador derrotado!");
+    }
+}`
+}
+];
+
+</script>
+
+<script>
+const LEVELS_CS = [
+{
+  id: 'm1',
+  title: 'Desafio 1 — Seu Primeiro Programa',
+  xp: 100,
+  badge: { icon: '🔤', label: 'Tipos e Variáveis' },
+  concept: {
+    title: 'Variáveis e tipos de dado',
+    html: `
+      <p>Uma <b>variável</b> é um espaço nomeado que guarda um valor. Em C# você precisa dizer o
+      <b>tipo de dado</b> antes do nome — é uma linguagem "fortemente tipada".</p>
+      <ul>
+        <li><code>int</code> — números inteiros (vida, pontuação)</li>
+        <li><code>float</code> — números com casas decimais (posição, velocidade)</li>
+        <li><code>string</code> — texto</li>
+        <li><code>bool</code> — verdadeiro ou falso</li>
+      </ul>
+      <p><b>Cuidado com a palavra "tipo":</b> ela tem dois sentidos diferentes. <b>Tipo de dado</b> é
+      a categoria técnica (int, float, string, bool — a lista acima). Se você também nomear uma variável
+      "tipo" pra guardar, por exemplo, a categoria de um zumbi, são duas coisas com o mesmo nome e
+      significados diferentes. Pra não confundir, este desafio usa <code>categoria</code> como nome da variável.</p>
+    `
+  },
+  enunciado: `
+    <p>Crie no editor um programa que declare os dados do primeiro zumbi e exiba tudo no console:</p>
+    <ul>
+      <li>categoria do zumbi (<code>string</code>): "Rasteiro"</li>
+      <li>vida (<code>int</code>): 30</li>
+      <li>velocidade (<code>int</code>): 2</li>
+    </ul>
+    <p>Saída esperada:</p>
+    <ul>
+      <li><code>Categoria: Rasteiro</code></li>
+      <li><code>Vida: 30</code></li>
+      <li><code>Velocidade: 2</code></li>
+    </ul>
+  `,
+  starter: `using System;
+
+class Zumbi
+{
+    static void Main()
+    {
+        // 1. declare categoria (string), vida (int) e velocidade (int)
+
+
+        // 2. exiba os três com Console.WriteLine, no formato:
+        //    Categoria: Rasteiro
+        //    Vida: 30
+        //    Velocidade: 2
+
+    }
+}`,
+  expectedOutput: ['Categoria: Rasteiro','Vida: 30','Velocidade: 2'],
+  checks: [
+    { re: /string\s+\w+\s*=\s*"Rasteiro"/, desc: 'declarar uma variável string = "Rasteiro"' },
+    { re: /int\s+\w+\s*=\s*30\b/, desc: 'declarar uma variável int = 30 (vida)' },
+    { re: /int\s+\w+\s*=\s*2\b/, desc: 'declarar uma variável int = 2 (velocidade)' },
+    { re: /Console\.WriteLine/, desc: 'usar Console.WriteLine pra exibir os dados' },
+  ],
+  hint: 'Exemplo com outros dados: string arma = "Espada"; int forca = 15; Console.WriteLine("Arma: " + arma); Console.WriteLine("Força: " + forca);',
+  gabarito: `string categoria = "Rasteiro";
+int vida = 30;
+int velocidade = 2;
+
+Console.WriteLine("Categoria: " + categoria);
+Console.WriteLine("Vida: " + vida);
+Console.WriteLine("Velocidade: " + velocidade);`
+},
+{
+  id: 'm2',
+  title: 'Desafio 2 — Calculando o Ataque',
+  xp: 120,
+  badge: { icon: '🧮', label: 'Operadores & Cast' },
+  concept: {
+    title: 'Operadores aritméticos e cast',
+    html: `
+      <p>C# tem os operadores <code>+ - * /</code> normais. O detalhe importa quando você mistura
+      <code>int</code> com <code>float</code>: o resultado vira <code>float</code>, e C# não converte
+      isso de volta pra <code>int</code> sozinho — seria perda de informação (as casas decimais).</p>
+      <p>Pra forçar essa conversão de volta, existe o <b>cast</b>: <code>(int)(expressão)</code>.
+      Ele trunca (corta) as casas decimais, não arredonda. <code>(int)(7.9)</code> vira <code>7</code>, não <code>8</code>.</p>
+      <p>Isso não é uma função sendo chamada — é o compilador convertendo o tipo do valor.</p>
+    `
+  },
+  enunciado: `
+    <p>O jogador tem 80 de vida e é atacado por um zumbi com <code>danoBase = 12</code> e <code>multiplicador = 2.0</code>.</p>
+    <p>Declare essas variáveis, calcule o dano final e exiba a vida restante.</p>
+    <p>Saída esperada: <code>Vida restante: 56</code></p>
+  `,
+  starter: `using System;
+
+class Ataque
+{
+    static void Main()
+    {
+        // 1. declare vidaJogador = 80, danoBase = 12, multiplicador = 2.0f
+
+
+        // 2. calcule danoFinal = (int)(danoBase * multiplicador)
+
+
+        // 3. subtraia danoFinal de vidaJogador e exiba:
+        //    Vida restante: 56
+
+    }
+}`,
+  expectedOutput: ['Vida restante: 56'],
+  checks: [
+    { re: /float\s+multiplicador\s*=\s*2(\.0)?f/, desc: 'declarar multiplicador como float = 2.0f' },
+    { re: /\(int\)\s*\(/, desc: 'usar o cast (int) pra calcular o dano final' },
+    { re: /vidaJogador\s*=\s*vidaJogador\s*-/, desc: 'subtrair o dano da vida do jogador' },
+    { re: /Console\.WriteLine/, desc: 'exibir o resultado com Console.WriteLine' },
+  ],
+  hint: 'Exemplo com outros dados: int forcaBase = 10; float mult = 1.5f; int resultado = (int)(forcaBase * mult); Console.WriteLine(resultado);',
+  gabarito: `int vidaJogador = 80;
+int danoBase = 12;
+float multiplicador = 2.0f;
+
+int danoFinal = (int)(danoBase * multiplicador);
+vidaJogador = vidaJogador - danoFinal;
+
+Console.WriteLine("Vida restante: " + vidaJogador);`
+},
+{
+  id: 'm3',
+  title: 'Desafio 3 — Posicionando os Personagens',
+  xp: 140,
+  badge: { icon: '📦', label: 'Struct' },
+  concept: {
+    title: 'struct: agrupando dados relacionados',
+    html: `
+      <p>Em jogos 2D, toda posição é um par de coordenadas (X, Y). Em vez de criar duas variáveis soltas
+      pra cada personagem, uma <code>struct</code> agrupa os dois valores numa única unidade reutilizável.</p>
+      <p>Uma struct tem um <b>construtor</b> — um bloco especial que roda quando você cria uma instância
+      com <code>new</code>, preenchendo os campos com os valores que você passar.</p>
+      <p><b>Atenção:</b> em engines prontas (Unity, MonoGame) já existe um tipo chamado <code>Vector2</code>
+      pronto pra uso. Aqui vocês estão construindo o próprio, do zero, pra entender como ele funciona por dentro
+      — o nome é igual de propósito, mas é 100% código de vocês.</p>
+    `
+  },
+  enunciado: `
+    <p>A struct <code>Vector2</code> já está pronta abaixo (é a mesma que vocês copiaram em aula).</p>
+    <p>Usando ela, crie no <code>Main</code>:</p>
+    <ul>
+      <li><code>posicaoJogador</code> em (5, 3)</li>
+      <li><code>posicaoZumbi</code> em (8, 3)</li>
+    </ul>
+    <p>Exiba as duas no formato <code>"X: valor, Y: valor"</code>.</p>
+  `,
+  starter: `using System;
+
+struct Vector2
+{
+    public float X;
+    public float Y;
+
+    public Vector2(float x, float y)
+    {
+        X = x;
+        Y = y;
+    }
+}
+
+class Jogo
+{
+    static void Main()
+    {
+        // 1. crie posicaoJogador em (5, 3) usando new Vector2(...)
+
+
+        // 2. crie posicaoZumbi em (8, 3)
+
+
+        // 3. exiba as duas posições:
+        //    Jogador -> X: 5, Y: 3
+        //    Zumbi -> X: 8, Y: 3
+
+    }
+}`,
+  expectedOutput: ['Jogador -> X: 5, Y: 3','Zumbi -> X: 8, Y: 3'],
+  checks: [
+    { re: /Vector2\s+posicaoJogador\s*=\s*new\s+Vector2\(\s*5\s*,\s*3\s*\)/, desc: 'criar posicaoJogador = new Vector2(5, 3)' },
+    { re: /Vector2\s+posicaoZumbi\s*=\s*new\s+Vector2\(\s*8\s*,\s*3\s*\)/, desc: 'criar posicaoZumbi = new Vector2(8, 3)' },
+    { re: /posicaoJogador\.X/, desc: 'acessar posicaoJogador.X' },
+    { re: /posicaoZumbi\.X/, desc: 'acessar posicaoZumbi.X' },
+  ],
+  hint: 'Exemplo com outros dados: Vector2 posicaoInimigo = new Vector2(2, 7); Console.WriteLine("X: " + posicaoInimigo.X + ", Y: " + posicaoInimigo.Y);',
+  gabarito: `Vector2 posicaoJogador = new Vector2(5, 3);
+Vector2 posicaoZumbi = new Vector2(8, 3);
+
+Console.WriteLine("Jogador -> X: " + posicaoJogador.X
+    + ", Y: " + posicaoJogador.Y);
+Console.WriteLine("Zumbi -> X: " + posicaoZumbi.X
+    + ", Y: " + posicaoZumbi.Y);`
+},
+{
+  id: 'm4',
+  title: 'Desafio 4 — Zumbi Alcançou?',
+  xp: 140,
+  badge: { icon: '🔀', label: 'Condicional' },
+  concept: {
+    title: 'Condicionais: if / else',
+    html: `
+      <p><code>if/else</code> decide qual caminho de código roda, com base numa condição que é
+      verdadeira ou falsa. Os operadores relacionais são: <code>&lt; &lt;= &gt; &gt;= == !=</code>.</p>
+      <p>No jogo: se a distância entre zumbi e jogador for pequena, o zumbi alcançou o alvo — senão,
+      ele ainda está se aproximando. Só um dos dois blocos roda, nunca os dois.</p>
+    `
+  },
+  enunciado: `
+    <p><code>posicaoJogador</code> em (10, 0) e <code>posicaoZumbi</code> em (10.5, 0).</p>
+    <p>Calcule a distância (X do zumbi menos X do jogador) e escreva a condicional:</p>
+    <ul>
+      <li>se <code>distancia &lt;= 1</code>: "O zumbi alcançou o jogador!"</li>
+      <li>senão: "O zumbi ainda está se aproximando."</li>
+    </ul>
+  `,
+  starter: `using System;
+
+struct Vector2
+{
+    public float X;
+    public float Y;
+    public Vector2(float x, float y) { X = x; Y = y; }
+}
+
+class Jogo
+{
+    static void Main()
+    {
+        Vector2 posicaoJogador = new Vector2(10, 0);
+        Vector2 posicaoZumbi = new Vector2(10.5f, 0);
+
+        // 1. calcule distancia = posicaoZumbi.X - posicaoJogador.X
+
+
+        // 2. escreva o if/else usando distancia <= 1
+
+    }
+}`,
+  expectedOutput: ['O zumbi alcançou o jogador!'],
+  checks: [
+    { re: /float\s+distancia\s*=\s*posicaoZumbi\.X\s*-\s*posicaoJogador\.X/, desc: 'calcular distancia = posicaoZumbi.X - posicaoJogador.X' },
+    { re: /if\s*\(\s*distancia\s*<=\s*1\s*\)/, desc: 'usar if (distancia <= 1)' },
+    { re: /else/, desc: 'ter um bloco else' },
+  ],
+  hint: 'Exemplo com outros dados: float dist = 4; if (dist <= 2) { Console.WriteLine("Perto!"); } else { Console.WriteLine("Longe."); }',
+  gabarito: `float distancia = posicaoZumbi.X - posicaoJogador.X;
+
+if (distancia <= 1)
+{
+    Console.WriteLine("O zumbi alcançou o jogador!");
+}
+else
+{
+    Console.WriteLine("O zumbi ainda está se aproximando.");
+}`
+},
+{
+  id: 'm5',
+  title: 'Desafio 5 — Sobrevivendo 5 Turnos',
+  xp: 150,
+  badge: { icon: '🔁', label: 'Loop' },
+  concept: {
+    title: 'Loops: for',
+    html: `
+      <p><code>for</code> repete um bloco de código um número definido de vezes. Tem três partes,
+      separadas por <code>;</code>:</p>
+      <ul>
+        <li><b>início</b>: <code>int turno = 1</code> — roda uma vez, antes de tudo</li>
+        <li><b>condição</b>: <code>turno &lt;= 5</code> — checada antes de cada repetição</li>
+        <li><b>incremento</b>: <code>turno++</code> — roda no fim de cada repetição</li>
+      </ul>
+      <p>É a mesma lógica usada depois pelo loop de atualização em tempo real de uma engine de jogo.</p>
+    `
+  },
+  enunciado: `
+    <p>O jogador começa com 150 de vida e perde 20 por turno.</p>
+    <p>Escreva um <code>for</code> que simule 5 turnos, exibindo a vida a cada turno no formato:</p>
+    <p><code>Turno 1 - Vida: 130</code></p>
+  `,
+  starter: `using System;
+
+class Jogo
+{
+    static void Main()
+    {
+        int vidaJogador = 150;
+
+        // escreva um for de turno = 1 até turno <= 5
+        // a cada turno: vidaJogador -= 20 e exiba "Turno X - Vida: Y"
+
+
+    }
+}`,
+  expectedOutput: ['Turno 1 - Vida: 130','Turno 2 - Vida: 110','Turno 3 - Vida: 90','Turno 4 - Vida: 70','Turno 5 - Vida: 50'],
+  checks: [
+    { re: /for\s*\(\s*int\s+turno\s*=\s*1\s*;\s*turno\s*<=\s*5\s*;\s*turno\+\+\s*\)/, desc: 'for (int turno = 1; turno <= 5; turno++)' },
+    { re: /vidaJogador\s*=\s*vidaJogador\s*-\s*20/, desc: 'reduzir vidaJogador em 20 por turno' },
+    { re: /Console\.WriteLine/, desc: 'exibir a vida a cada turno' },
+  ],
+  hint: 'Exemplo com outros dados: for (int rodada = 1; rodada <= 3; rodada++) { Console.WriteLine("Rodada " + rodada); }',
+  gabarito: `int vidaJogador = 150;
+
+for (int turno = 1; turno <= 5; turno++)
+{
+    vidaJogador = vidaJogador - 20;
+    Console.WriteLine("Turno " + turno + " - Vida: " + vidaJogador);
+}`
+},
+{
+  id: 'm6',
+  title: 'Desafio 6 — Método SomarPontos',
+  xp: 160,
+  badge: { icon: '⚙️', label: 'Métodos' },
+  concept: {
+    title: 'Métodos e campos static',
+    html: `
+      <p>Um <b>método</b> agrupa um bloco de código reutilizável com um nome — evita repetir a mesma
+      lógica várias vezes. <code>static void SomarPontos(int pontos)</code> quer dizer: um método chamado
+      <code>SomarPontos</code>, que recebe um número (<code>pontos</code>) e não devolve nada (<code>void</code>).</p>
+      <p><code>static</code> aqui aparece de dois jeitos diferentes: um <b>campo static</b>
+      (<code>static int pontuacao = 0;</code>) é uma variável que pertence à classe inteira, não a um
+      objeto específico — diferente das variáveis locais que vocês usaram dentro do <code>Main</code> até agora,
+      que só existem enquanto o método está rodando.</p>
+    `
+  },
+  enunciado: `
+    <p>Crie o método <code>SomarPontos(int pontos)</code>, que:</p>
+    <ul>
+      <li>só soma se <code>pontos</code> for maior que 0</li>
+      <li>atualiza a variável <code>pontuacao</code></li>
+      <li>exibe a pontuação atual</li>
+    </ul>
+    <p>Chame com 50, depois -10, depois 30, em sequência.</p>
+  `,
+  starter: `using System;
+
+class Jogo
+{
+    static int pontuacao = 0;
+
+    static void SomarPontos(int pontos)
+    {
+        // 1. só soma se pontos > 0
+
+        // 2. exiba: Pontuação: X
+
+    }
+
+    static void Main()
+    {
+        // chame SomarPontos 3 vezes: 50, -10, 30
+
+    }
+}`,
+  expectedOutput: ['Pontuação: 50','Pontuação: 50','Pontuação: 80'],
+  checks: [
+    { re: /if\s*\(\s*pontos\s*>\s*0\s*\)/, desc: 'usar if (pontos > 0) dentro do método' },
+    { re: /pontuacao\s*=\s*pontuacao\s*\+\s*pontos/, desc: 'atualizar pontuacao = pontuacao + pontos' },
+    { re: /SomarPontos\(\s*50\s*\)/, desc: 'chamar SomarPontos(50)' },
+    { re: /SomarPontos\(\s*-10\s*\)/, desc: 'chamar SomarPontos(-10)' },
+    { re: /SomarPontos\(\s*30\s*\)/, desc: 'chamar SomarPontos(30)' },
+  ],
+  hint: 'Exemplo com outros dados: static int total = 0; static void Somar(int valor) { if (valor > 0) { total = total + valor; } Console.WriteLine("Total: " + total); } // chamado assim: Somar(20); Somar(-5); Somar(10);',
+  gabarito: `static int pontuacao = 0;
+
+static void SomarPontos(int pontos)
+{
+    if (pontos > 0)
+    {
+        pontuacao = pontuacao + pontos;
+    }
+    Console.WriteLine("Pontuação: " + pontuacao);
+}
+
+static void Main()
+{
+    SomarPontos(50);
+    SomarPontos(-10);
+    SomarPontos(30);
+}`
+},
+{
+  id: 'm7',
+  title: 'Desafio 7 — Classe Zumbi',
+  xp: 180,
+  badge: { icon: '🏗️', label: 'Classes & Objetos' },
+  concept: {
+    title: 'Classes e objetos',
+    html: `
+      <p>Uma <b>classe</b> descreve um "tipo" de coisa — o molde — com seus dados (campos) e ações
+      (métodos) juntos. Um <b>objeto</b> é uma instância real dessa classe, criada com <code>new</code>.
+      É exatamente como uma engine cria cada personagem na cena.</p>
+      <p><code>public</code> na frente de um campo ou método quer dizer que ele pode ser acessado de
+      fora da classe (por exemplo, <code>zumbi1.Vida</code> no <code>Main</code>).</p>
+      <p><b>Por que Zumbi é class e Vector2 é struct?</b> Struct é pra dados simples, pequenos, que não
+      mudam de "identidade" (uma posição é só um par de números). Classe é pra coisas com comportamento
+      mais complexo e estado que muda ao longo do tempo — como um personagem que recebe dano.</p>
+    `
+  },
+  enunciado: `
+    <p>Crie a classe <code>Zumbi</code> com <code>Vida (int = 30)</code> e <code>Velocidade (int = 2)</code>.</p>
+    <p>Adicione o método <code>ReceberDano(int dano)</code>, igual à lógica do Jogador.</p>
+    <p>Crie um objeto <code>zumbi1</code>, aplique 20 de dano e exiba a vida restante.</p>
+  `,
+  starter: `using System;
+
+// 1. crie a classe Zumbi com Vida = 30, Velocidade = 2
+//    e o método ReceberDano(int dano)
+
+
+class Jogo
+{
+    static void Main()
+    {
+        // 2. crie zumbi1 = new Zumbi()
+
+        // 3. aplique 20 de dano
+
+        // 4. exiba: Vida do zumbi: 10
+
+    }
+}`,
+  expectedOutput: ['Vida do zumbi: 10'],
+  checks: [
+    { re: /class\s+Zumbi/, desc: 'declarar class Zumbi' },
+    { re: /public\s+int\s+Vida\s*=\s*30/, desc: 'campo public int Vida = 30' },
+    { re: /public\s+void\s+ReceberDano\s*\(\s*int\s+dano\s*\)/, desc: 'método public void ReceberDano(int dano)' },
+    { re: /new\s+Zumbi\(\)/, desc: 'instanciar zumbi1 = new Zumbi()' },
+    { re: /zumbi1\.ReceberDano\(\s*20\s*\)/, desc: 'chamar zumbi1.ReceberDano(20)' },
+  ],
+  hint: 'Exemplo com outros dados: class Inimigo { public int Vida = 50; public void ReceberDano(int dano) { Vida = Vida - dano; if (Vida < 0) Vida = 0; } } // uso: Inimigo inimigo1 = new Inimigo(); inimigo1.ReceberDano(15); Console.WriteLine(inimigo1.Vida);',
+  gabarito: `class Zumbi
+{
+    public int Vida = 30;
+    public int Velocidade = 2;
+
+    public void ReceberDano(int dano)
+    {
+        Vida = Vida - dano;
+        if (Vida < 0)
+        {
+            Vida = 0;
+        }
+    }
+}
+
+class Jogo
+{
+    static void Main()
+    {
+        Zumbi zumbi1 = new Zumbi();
+        zumbi1.ReceberDano(20);
+        Console.WriteLine("Vida do zumbi: " + zumbi1.Vida);
+    }
+}`
+},
+{
+  id: 'm8',
+  title: 'Atividade Prática — Mini-Jogo em Texto',
+  xp: 220,
+  badge: { icon: '🏆', label: 'Integração Final' },
+  concept: {
+    title: 'Juntando tudo',
+    html: `
+      <p>Nenhum conceito novo aqui — esta é a hora de combinar tudo que já foi praticado: variáveis e
+      tipos, operadores, condicional, loop, métodos e classes/objetos, no mesmo programa.</p>
+      <p>É exatamente esse tipo de lógica — classes com estado (Vida, Pontuação) e comportamento
+      (ReceberDano, SomarPontos) atualizado turno a turno — que depois migra pra dentro de uma engine
+      de jogo sem precisar ser reescrita.</p>
+    `
+  },
+  enunciado: `
+    <p>Junte tudo que foi construído: crie as classes <code>Jogador</code> (Vida=100, Pontuacao=0) e
+    <code>Zumbi</code> (Vida=30), cada uma com <code>ReceberDano</code>; o Jogador também com <code>SomarPontos</code>.</p>
+    <p>No <code>Main</code>, crie um objeto de cada e simule <b>3 turnos</b> com um <code>for</code>:</p>
+    <ul>
+      <li>a cada turno, o zumbi causa 15 de dano no jogador</li>
+      <li>o jogador soma 10 pontos por sobreviver ao turno</li>
+      <li>exiba vida e pontuação a cada turno</li>
+      <li>ao final, exiba se sobreviveu (Vida &gt; 0)</li>
+    </ul>
+  `,
+  starter: `using System;
+
+class Jogador
+{
+    public int Vida = 100;
+    public int Pontuacao = 0;
+
+    public void ReceberDano(int dano)
+    {
+        Vida = Vida - dano;
+        if (Vida < 0) Vida = 0;
+    }
+
+    public void SomarPontos(int pontos)
+    {
+        if (pontos > 0) Pontuacao = Pontuacao + pontos;
+    }
+}
+
+// 1. crie a classe Zumbi com Vida = 30
+
+
+class Jogo
+{
+    static void Main()
+    {
+        Jogador heroi = new Jogador();
+        // 2. crie zumbi1 = new Zumbi()
+
+        // 3. for de 3 turnos:
+        //    heroi.ReceberDano(15); heroi.SomarPontos(10);
+        //    exiba "Turno X - Vida: Y Pontuacao: Z"
+
+
+        // 4. if (heroi.Vida > 0) exiba "Sobreviveu: true" senão "Sobreviveu: false"
+
+    }
+}`,
+  expectedOutput: [
+    'Turno 1 - Vida: 85 Pontuacao: 10',
+    'Turno 2 - Vida: 70 Pontuacao: 20',
+    'Turno 3 - Vida: 55 Pontuacao: 30',
+    'Sobreviveu: true'
+  ],
+  checks: [
+    { re: /class\s+Zumbi/, desc: 'declarar class Zumbi' },
+    { re: /for\s*\(/, desc: 'usar um for pra simular os turnos' },
+    { re: /heroi\.ReceberDano\(\s*15\s*\)/, desc: 'aplicar 15 de dano no herói a cada turno' },
+    { re: /heroi\.SomarPontos\(\s*10\s*\)/, desc: 'somar 10 pontos por turno' },
+    { re: /if\s*\(\s*heroi\.Vida\s*>\s*0\s*\)/, desc: 'checar heroi.Vida > 0 no final' },
+  ],
+  hint: 'Exemplo com outros dados: for (int rodada = 1; rodada <= 2; rodada++) { personagem.ReceberDano(10); personagem.SomarPontos(5); Console.WriteLine("Rodada " + rodada + " - Vida: " + personagem.Vida); }',
+  gabarito: `class Zumbi
+{
+    public int Vida = 30;
+}
+
+class Jogo
+{
+    static void Main()
+    {
+        Jogador heroi = new Jogador();
+        Zumbi zumbi1 = new Zumbi();
+
+        for (int turno = 1; turno <= 3; turno++)
+        {
+            heroi.ReceberDano(15);
+            heroi.SomarPontos(10);
+            Console.WriteLine("Turno " + turno + " - Vida: " + heroi.Vida + " Pontuacao: " + heroi.Pontuacao);
+        }
+
+        if (heroi.Vida > 0)
+        {
+            Console.WriteLine("Sobreviveu: true");
+        }
+        else
+        {
+            Console.WriteLine("Sobreviveu: false");
+        }
+    }
+}`
+}
+];
+
+</script>
+
+<script>
+(function(){
+  "use strict";
+
+  const TRACKS = {
+    js: { label: 'JavaScript', levels: LEVELS_JS, run: runJS, editorTitle: 'Editor — JS no navegador' },
+    csharp: { label: 'C#', levels: LEVELS_CS, run: runCSharp, editorTitle: 'Editor — .NET Fiddle style' }
+  };
+
+  const RANKS = [
+    { name: 'Estagiário', min: 0 },
+    { name: 'Programador(a) Júnior', min: 200 },
+    { name: 'Programador(a) Pleno', min: 500 },
+    { name: 'Programador(a) Sênior', min: 900 },
+    { name: 'Lead Developer @ PixelForge', min: 1400 },
+  ];
+
+  const STORAGE_KEY = 'pixelforge_progress';
+
+  let currentTrack = 'js';
+  let currentIndex = { js: 0, csharp: 0 };
+  let completed = { js: {}, csharp: {} };
+  let codeByLevel = { js: {}, csharp: {} };
+  let xpTotal = 0;
+  let earnedBadges = {};
+
+  const tabsEl = document.getElementById('langTabs');
+  const missionListEl = document.getElementById('missionList');
+  const mTitleEl = document.getElementById('mTitle');
+  const mProgressEl = document.getElementById('mProgress');
+  const mConceptEl = document.getElementById('mConcept');
+  const mEnunciadoEl = document.getElementById('mEnunciado');
+  const editorTitleEl = document.getElementById('editorTitle');
+  const editorEl = document.getElementById('editor');
+  const consoleEl = document.getElementById('consoleOut');
+  const checklistEl = document.getElementById('checklist');
+  const resultBannerEl = document.getElementById('resultBanner');
+  const gabaritoBoxEl = document.getElementById('gabaritoBox');
+  const hintBoxEl = document.getElementById('hintBox');
+  const rankNameEl = document.getElementById('rankName');
+  const xpValueEl = document.getElementById('xpValue');
+  const xpToNextEl = document.getElementById('xpToNext');
+  const rankBarFillEl = document.getElementById('rankBarFill');
+  const badgesShelfEl = document.getElementById('badgesShelf');
+
+  const ALL_LEVELS = LEVELS_JS.map(l => ({ ...l, track: 'js' })).concat(LEVELS_CS.map(l => ({ ...l, track: 'csharp' })));
+
+  function isUnlocked(track, idx){
+    if (idx === 0) return true;
+    const levels = TRACKS[track].levels;
+    const prev = levels[idx - 1];
+    return !!completed[track][prev.id];
+  }
+
+  function loadProgress(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw){
+        const data = JSON.parse(raw);
+        completed = data.completed || completed;
+        codeByLevel = data.codeByLevel || codeByLevel;
+        currentIndex = data.currentIndex || currentIndex;
+        currentTrack = data.currentTrack || currentTrack;
+        xpTotal = data.xpTotal || 0;
+        earnedBadges = data.earnedBadges || {};
+      }
+    } catch(e){ /* sem progresso salvo ainda, ou localStorage indisponível */ }
+    ['js','csharp'].forEach(t => {
+      while (currentIndex[t] > 0 && !isUnlocked(t, currentIndex[t])) currentIndex[t]--;
+    });
+  }
+  function saveProgress(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ completed, codeByLevel, currentIndex, currentTrack, xpTotal, earnedBadges }));
+    } catch(e){ /* localStorage cheio ou indisponível — não bloqueia o uso */ }
+  }
+
+  function currentRank(xp){
+    let rank = RANKS[0];
+    for (const r of RANKS){ if (xp >= r.min) rank = r; }
+    return rank;
+  }
+  function nextRank(xp){
+    for (const r of RANKS){ if (r.min > xp) return r; }
+    return null;
+  }
+
+  function renderStatusBar(){
+    const rank = currentRank(xpTotal);
+    const next = nextRank(xpTotal);
+    rankNameEl.textContent = rank.name;
+    xpValueEl.textContent = xpTotal;
+    if (next){
+      xpToNextEl.textContent = `· faltam ${next.min - xpTotal} XP pra ${next.name}`;
+      const pct = ((xpTotal - rank.min) / (next.min - rank.min)) * 100;
+      rankBarFillEl.style.width = Math.max(4, Math.min(100, pct)) + '%';
+    } else {
+      xpToNextEl.textContent = '· nível máximo!';
+      rankBarFillEl.style.width = '100%';
+    }
+  }
+
+  function renderBadges(justEarnedId){
+    badgesShelfEl.innerHTML = '';
+    ALL_LEVELS.forEach(lvl => {
+      const earned = !!earnedBadges[lvl.track + ':' + lvl.id];
+      const el = document.createElement('div');
+      el.className = 'badge' + (earned ? ' earned' : '') + (justEarnedId === (lvl.track + ':' + lvl.id) ? ' pulse' : '');
+      el.textContent = lvl.badge.icon;
+      el.title = (earned ? '✓ ' : '🔒 ') + lvl.badge.label + ' — ' + TRACKS[lvl.track].label + ' · ' + lvl.title;
+      badgesShelfEl.appendChild(el);
+    });
+  }
+
+  function renderTabs(){
+    tabsEl.innerHTML = '';
+    ['js','csharp'].forEach(trackKey => {
+      const btn = document.createElement('button');
+      btn.className = 'tab-btn' + (trackKey === currentTrack ? ' active' : '');
+      btn.textContent = TRACKS[trackKey].label;
+      btn.addEventListener('click', () => { switchTrack(trackKey); });
+      tabsEl.appendChild(btn);
+    });
+  }
+
+  function switchTrack(trackKey){
+    currentTrack = trackKey;
+    saveProgress();
+    renderTabs();
+    renderMissionList();
+    selectLevel(currentIndex[currentTrack] || 0);
+  }
+
+  function renderMissionList(){
+    const levels = TRACKS[currentTrack].levels;
+    missionListEl.innerHTML = '';
+    levels.forEach((lvl, idx) => {
+      const btn = document.createElement('button');
+      const isDone = completed[currentTrack][lvl.id];
+      const unlocked = isUnlocked(currentTrack, idx);
+      btn.className = 'mission-btn'
+        + (idx === currentIndex[currentTrack] ? ' active' : '')
+        + (isDone ? ' done' : '')
+        + (unlocked ? '' : ' locked');
+      const icon = unlocked ? '<span class="dot"></span>' : '<span class="dot lock">🔒</span>';
+      btn.innerHTML = `${icon}<span class="num">${idx+1}.</span> ${lvl.title.replace(/^.*—\s*/,'')}`;
+      btn.addEventListener('click', () => {
+        if (!unlocked){
+          flashLocked();
+          return;
+        }
+        selectLevel(idx);
+      });
+      missionListEl.appendChild(btn);
+    });
+  }
+
+  function flashLocked(){
+    resultBannerEl.classList.add('show');
+    resultBannerEl.className = 'result-banner show bad';
+    resultBannerEl.style.whiteSpace = 'pre-wrap';
+    resultBannerEl.textContent = '🔒 Conclua a missão anterior primeiro pra desbloquear essa.';
+  }
+
+  function selectLevel(idx){
+    currentIndex[currentTrack] = idx;
+    const levels = TRACKS[currentTrack].levels;
+    const lvl = levels[idx];
+    mTitleEl.textContent = lvl.title;
+    mProgressEl.textContent = `${TRACKS[currentTrack].label} · Missão ${idx+1} de ${levels.length} · vale ${lvl.xp} XP`
+      + (completed[currentTrack][lvl.id] ? ' · concluída ✓' : '');
+
+    if (lvl.concept){
+      mConceptEl.style.display = '';
+      mConceptEl.innerHTML = `<h3>📘 Conceito — ${lvl.concept.title}</h3><div class="concept-body">${lvl.concept.html}</div>`;
+    } else {
+      mConceptEl.style.display = 'none';
+      mConceptEl.innerHTML = '';
+    }
+
+    mEnunciadoEl.innerHTML = lvl.enunciado;
+    editorTitleEl.textContent = TRACKS[currentTrack].editorTitle;
+    editorEl.value = codeByLevel[currentTrack][lvl.id] || lvl.starter;
+    consoleEl.innerHTML = '<span class="empty">// clique em Executar pra ver a saída aqui</span>';
+    resultBannerEl.className = 'result-banner';
+    resultBannerEl.textContent = '';
+    gabaritoBoxEl.textContent = lvl.gabarito;
+    hintBoxEl.textContent = lvl.hint;
+    hintBoxEl.classList.remove('show');
+    checklistEl.innerHTML = '';
+    renderMissionList();
+    saveProgress();
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  }
+
+  function runCode(){
+    const levels = TRACKS[currentTrack].levels;
+    const idx = currentIndex[currentTrack];
+    const lvl = levels[idx];
+    const code = editorEl.value;
+    codeByLevel[currentTrack][lvl.id] = code;
+    saveProgress();
+
+    let output = [];
+    let error = null;
+    try{
+      const res = TRACKS[currentTrack].run(code);
+      output = res.output;
+    } catch(e){
+      error = e.message;
+    }
+
+    if (error){
+      consoleEl.innerHTML = `<span class="errline">Erro: ${escapeHtml(error)}</span>`;
+    } else if (output.length === 0){
+      consoleEl.innerHTML = '<span class="empty">// o programa rodou mas não exibiu nada</span>';
+    } else {
+      consoleEl.textContent = output.join('\n');
+    }
+
+    checklistEl.innerHTML = '';
+    let allChecksPass = true;
+    lvl.checks.forEach(c => {
+      const pass = c.re.test(code);
+      if (!pass) allChecksPass = false;
+      const row = document.createElement('div');
+      row.className = 'check-item ' + (pass ? 'pass' : 'fail');
+      row.innerHTML = `<span class="mark">${pass ? '✓' : '○'}</span><span class="txt">${escapeHtml(c.desc)}</span>`;
+      checklistEl.appendChild(row);
+    });
+
+    const expectedJoined = lvl.expectedOutput.join('\n');
+    const gotJoined = output.join('\n');
+    const outputMatches = !error && gotJoined === expectedJoined;
+
+    resultBannerEl.classList.add('show');
+    resultBannerEl.style.whiteSpace = 'pre-wrap';
+    if (outputMatches && allChecksPass){
+      const wasAlreadyDone = !!completed[currentTrack][lvl.id];
+      resultBannerEl.className = 'result-banner show ok';
+      const isLast = idx === levels.length - 1;
+
+      if (!wasAlreadyDone){
+        xpTotal += lvl.xp;
+        earnedBadges[currentTrack + ':' + lvl.id] = true;
+        completed[currentTrack][lvl.id] = true;
+        resultBannerEl.textContent = `✓ Missão concluída! +${lvl.xp} XP · Selo desbloqueado: ${lvl.badge.icon} ${lvl.badge.label}`
+          + (isLast ? ' — você terminou essa trilha! 🎉' : ' — próxima missão desbloqueada.');
+        saveProgress();
+        renderStatusBar();
+        renderBadges(currentTrack + ':' + lvl.id);
+      } else {
+        resultBannerEl.textContent = '✓ Saída bateu certinho com o esperado (missão já concluída antes).';
+      }
+
+      renderMissionList();
+      mProgressEl.textContent = `${TRACKS[currentTrack].label} · Missão ${idx+1} de ${levels.length} · vale ${lvl.xp} XP · concluída ✓`;
+    } else if (!error && !outputMatches){
+      resultBannerEl.className = 'result-banner show bad';
+      resultBannerEl.textContent = `Quase lá — a saída ainda não bate com o esperado:\nEsperado:\n${expectedJoined}\n\nObtido:\n${gotJoined || '(nada)'}`;
+    } else if (error){
+      resultBannerEl.className = 'result-banner show bad';
+      resultBannerEl.textContent = 'O código não rodou. Veja o erro no console acima.';
+    }
+  }
+
+  document.getElementById('btnRun').addEventListener('click', runCode);
+  document.getElementById('btnReset').addEventListener('click', () => {
+    const lvl = TRACKS[currentTrack].levels[currentIndex[currentTrack]];
+    if (confirm('Restaurar o molde original desta missão? Seu código atual será perdido.')){
+      editorEl.value = lvl.starter;
+      codeByLevel[currentTrack][lvl.id] = lvl.starter;
+      saveProgress();
+    }
+  });
+  document.getElementById('btnHint').addEventListener('click', () => {
+    hintBoxEl.classList.toggle('show');
+  });
+
+  editorEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab'){
+      e.preventDefault();
+      const start = editorEl.selectionStart, end = editorEl.selectionEnd;
+      editorEl.value = editorEl.value.slice(0, start) + '    ' + editorEl.value.slice(end);
+      editorEl.selectionStart = editorEl.selectionEnd = start + 4;
+    }
+  });
+
+  (function init(){
+    loadProgress();
+    renderTabs();
+    renderMissionList();
+    renderStatusBar();
+    renderBadges(null);
+    selectLevel(currentIndex[currentTrack] || 0);
+  })();
+})();
+
+</script>
+</body>
+</html>
